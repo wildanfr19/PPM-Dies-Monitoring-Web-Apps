@@ -1,0 +1,676 @@
+import AppLayout from '@/Layouts/AppLayout';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
+
+export default function ImportIndex({ auth }) {
+    const { flash } = usePage().props;
+    const [activeTab, setActiveTab] = useState('production');
+
+    const productionForm = useForm({
+        file: null,
+    });
+
+    const diesForm = useForm({
+        file: null,
+    });
+
+    const handleProductionSubmit = (e) => {
+        e.preventDefault();
+        productionForm.post(route('import.production'), {
+            forceFormData: true,
+        });
+    };
+
+    const handleDiesSubmit = (e) => {
+        e.preventDefault();
+        diesForm.post(route('import.dies'), {
+            forceFormData: true,
+        });
+    };
+        // Sample data untuk preview
+    const sampleDies = [
+        {
+            no: 1,
+            partNumber: '71142-I6000',
+            partName: 'REINF-FR PILLAR OTR LWR,RH',
+            model: 'KS B',
+            totalDie: 4,
+            accStroke: 1500,
+            lastStroke: 804,
+            forecast: [1847, 1822, 1585, 909, 1788, 1131, 2028, 2543, 1848, 2444, 760, 0],
+        },
+        {
+            no:  2,
+            partNumber:  '65122-I6000',
+            partName: 'PNL CTR FLOOR SIDE,RH',
+            model: 'KS B',
+            totalDie: 4,
+            accStroke: 2075,
+            lastStroke: 1467,
+            forecast: [1847, 1822, 1585, 909, 1788, 1131, 2028, 2543, 1848, 2444, 760, 0],
+        },
+    ];
+
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    return (
+        <AppLayout
+            user={auth.user}
+            header={
+                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+                    Import / Export Data
+                </h2>
+            }
+        >
+            <Head title="Import Data" />
+
+            <div className="py-6 px-6">
+                <div className="max-w-12xl mx-auto space-y-6">
+
+                    {/* Flash Messages */}
+                    {flash?. success && (
+                        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative flex items-center gap-2">
+                            <span className="text-xl">✅</span>
+                            <span className="block sm:inline">{flash.success}</span>
+                        </div>
+                    )}
+                    {flash?.error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center gap-2">
+                            <span className="text-xl">❌</span>
+                            <span className="block sm:inline">{flash.error}</span>
+                        </div>
+                    )}
+
+                    {/* Tabs */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                        <div className="border-b border-gray-200 dark:border-gray-700">
+                            <nav className="flex -mb-px">
+                                <button
+                                    onClick={() => setActiveTab('production')}
+                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
+                                        activeTab === 'production'
+                                            ?  'border-blue-500 text-blue-600'
+                                            : 'border-transparent text-gray-500 hover: text-gray-700 hover: border-gray-300'
+                                    }`}
+                                >
+                                    ⚙️ Production Log (Act_Prod)
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('dies')}
+                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
+                                        activeTab === 'dies'
+                                            ?  'border-blue-500 text-blue-600'
+                                            : 'border-transparent text-gray-500 hover: text-gray-700 hover: border-gray-300'
+                                    }`}
+                                >
+                                    🔧 Dies Master
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('schedule')}
+                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
+                                        activeTab === 'schedule'
+                                            ? 'border-blue-500 text-blue-600'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    }`}
+                                >
+                                    📅 PPM Schedule Template
+                                </button>
+                            </nav>
+                        </div>
+
+                        <div className="p-6">
+                            {/* ==================== Production Log Import ==================== */}
+                            {activeTab === 'production' && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                                📤 Import Production Log (Act_Prod)
+                                            </h3>
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                Import daily production data from Excel file.  Output will be added to die's stroke count.
+                                            </p>
+                                        </div>
+                                        <a
+                                            href={route('import.template.production')}
+                                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 whitespace-nowrap"
+                                        >
+                                            📥 Download Template
+                                        </a>
+                                    </div>
+
+                                    {/* Template Preview */}
+                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 overflow-hidden">
+                                        <h4 className="font-medium text-gray-900 dark: text-gray-100 mb-3">
+                                            📋 Template Format Preview:
+                                        </h4>
+                                        <div className="overflow-x-auto">
+                                            <table className="text-xs min-w-full">
+                                                <thead>
+                                                    <tr className="bg-green-700 text-white">
+                                                        <th className="px-2 py-2 border border-green-600 text-left">No</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Date</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Shift</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Part Number</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Part Name</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Model</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Customer</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Line</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Qty Die</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Running Process</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Start</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Finish</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Total (hr)</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Total (min)</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Break Time</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left font-bold bg-green-800">Total Output</th>
+                                                        <th className="px-2 py-2 border border-green-600 text-left">Month</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white dark:bg-gray-800">
+                                                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                        <td className="px-2 py-1. 5 border text-center">1</td>
+                                                        <td className="px-2 py-1.5 border">20-Jan-25</td>
+                                                        <td className="px-2 py-1.5 border text-center">1</td>
+                                                        <td className="px-2 py-1.5 border font-medium text-blue-600">5240B908/909</td>
+                                                        <td className="px-2 py-1.5 border">BRACE DASH SIDE RH</td>
+                                                        <td className="px-2 py-1.5 border">4L45W</td>
+                                                        <td className="px-2 py-1.5 border">ATS</td>
+                                                        <td className="px-2 py-1.5 border">800T</td>
+                                                        <td className="px-2 py-1.5 border text-center">3</td>
+                                                        <td className="px-2 py-1.5 border">Auto</td>
+                                                        <td className="px-2 py-1.5 border">16:18</td>
+                                                        <td className="px-2 py-1.5 border">17:45</td>
+                                                        <td className="px-2 py-1.5 border">1:27</td>
+                                                        <td className="px-2 py-1.5 border">87</td>
+                                                        <td className="px-2 py-1.5 border">15</td>
+                                                        <td className="px-2 py-1.5 border text-center font-bold text-green-600 bg-green-50">600</td>
+                                                        <td className="px-2 py-1.5 border">Jan</td>
+                                                    </tr>
+                                                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                        <td className="px-2 py-1.5 border text-center">2</td>
+                                                        <td className="px-2 py-1.5 border">20-Jan-25</td>
+                                                        <td className="px-2 py-1.5 border text-center">1</td>
+                                                        <td className="px-2 py-1.5 border font-medium text-blue-600">71362-I6000</td>
+                                                        <td className="px-2 py-1.5 border">REINF CTR PLR OTR UPR,RH</td>
+                                                        <td className="px-2 py-1.5 border">KS</td>
+                                                        <td className="px-2 py-1.5 border">HMMI</td>
+                                                        <td className="px-2 py-1.5 border">1200T</td>
+                                                        <td className="px-2 py-1.5 border text-center">4</td>
+                                                        <td className="px-2 py-1.5 border">Auto</td>
+                                                        <td className="px-2 py-1.5 border">10:00</td>
+                                                        <td className="px-2 py-1.5 border">11:44</td>
+                                                        <td className="px-2 py-1.5 border">1:44</td>
+                                                        <td className="px-2 py-1.5 border">104</td>
+                                                        <td className="px-2 py-1.5 border">10</td>
+                                                        <td className="px-2 py-1.5 border text-center font-bold text-green-600 bg-green-50">752</td>
+                                                        <td className="px-2 py-1.5 border">Jan</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Upload Form */}
+                                    <form onSubmit={handleProductionSubmit} className="space-y-4">
+                                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                                            <div className="space-y-2">
+                                                <div className="text-4xl">📁</div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Select Excel File (. xlsx, .xls, .csv)
+                                                </label>
+                                                <input
+                                                    type="file"
+                                                    accept=".xlsx,.xls,.csv"
+                                                    onChange={(e) => productionForm.setData('file', e.target.files[0])}
+                                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                                                />
+                                                {productionForm.data. file && (
+                                                    <p className="text-sm text-green-600 mt-2">
+                                                        ✓ Selected:  {productionForm.data.file.name}
+                                                    </p>
+                                                )}
+                                                {productionForm.errors.file && (
+                                                    <p className="text-red-500 text-xs mt-1">{productionForm. errors.file}</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={productionForm.processing || !productionForm.data.file}
+                                            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                        >
+                                            {productionForm.processing ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                    Importing...
+                                                </span>
+                                            ) : '📤 Import Production Data'}
+                                        </button>
+                                    </form>
+
+                                    {/* Info */}
+                                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark: border-yellow-800 rounded-lg p-4">
+                                        <h4 className="font-medium text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                                            <span>⚠️</span> Important Notes:
+                                        </h4>
+                                        <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-2 list-disc list-inside space-y-1">
+                                            <li><strong>Part Number</strong> must already exist in Dies Master</li>
+                                            <li><strong>Total Output</strong> will be added to Die's accumulation stroke automatically</li>
+                                            <li>Date format: <code className="bg-yellow-100 px-1 rounded">DD-MMM-YY</code> (e.g., 20-Jan-25)</li>
+                                            <li>Shift must be <code className="bg-yellow-100 px-1 rounded">1</code>, <code className="bg-yellow-100 px-1 rounded">2</code>, or <code className="bg-yellow-100 px-1 rounded">3</code></li>
+                                            <li>Empty rows will be skipped automatically</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ==================== Dies Master Import ==================== */}
+                            {activeTab === 'dies' && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                                📤 Import Dies Master
+                                            </h3>
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                Import or update dies master data from Excel file
+                                            </p>
+                                        </div>
+                                        <a
+                                            href={route('import.template.dies')}
+                                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 whitespace-nowrap"
+                                        >
+                                            📥 Download Template
+                                        </a>
+                                    </div>
+
+                                    {/* Template Preview */}
+                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 overflow-hidden">
+                                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+                                            📋 Template Format Preview:
+                                        </h4>
+                                        <div className="overflow-x-auto">
+                                            <table className="text-xs min-w-full">
+                                                <thead>
+                                                    <tr className="bg-blue-700 text-white">
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">No</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Part Number</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Part Name</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Model</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Customer</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Total Die</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Line</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Accumulation Stroke</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Control Stroke</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Last PPM Date</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Location</th>
+                                                        <th className="px-2 py-2 border border-blue-600 text-left">Notes</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white dark:bg-gray-800">
+                                                    <tr className="hover: bg-gray-50 dark: hover:bg-gray-700">
+                                                        <td className="px-2 py-1.5 border text-center">1</td>
+                                                        <td className="px-2 py-1.5 border font-medium text-blue-600">71142-I6000</td>
+                                                        <td className="px-2 py-1.5 border">REINF-FR PILLAR OTR LWR,RH</td>
+                                                        <td className="px-2 py-1.5 border">KS</td>
+                                                        <td className="px-2 py-1.5 border">HMMI</td>
+                                                        <td className="px-2 py-1.5 border text-center">4</td>
+                                                        <td className="px-2 py-1.5 border">800T</td>
+                                                        <td className="px-2 py-1.5 border text-center">0</td>
+                                                        <td className="px-2 py-1.5 border text-center">6000</td>
+                                                        <td className="px-2 py-1.5 border"></td>
+                                                        <td className="px-2 py-1.5 border">Rack A-01</td>
+                                                        <td className="px-2 py-1.5 border"></td>
+                                                    </tr>
+                                                    <tr className="hover:bg-gray-50 dark:hover: bg-gray-700">
+                                                        <td className="px-2 py-1.5 border text-center">2</td>
+                                                        <td className="px-2 py-1.5 border font-medium text-blue-600">60415-TSEY-X000-H1</td>
+                                                        <td className="px-2 py-1.5 border">STIFF R, BHD SIDE MBR</td>
+                                                        <td className="px-2 py-1.5 border">2SJ</td>
+                                                        <td className="px-2 py-1.5 border">UPIN</td>
+                                                        <td className="px-2 py-1.5 border text-center">3</td>
+                                                        <td className="px-2 py-1.5 border">250T</td>
+                                                        <td className="px-2 py-1.5 border text-center">0</td>
+                                                        <td className="px-2 py-1.5 border text-center">10000</td>
+                                                        <td className="px-2 py-1.5 border"></td>
+                                                        <td className="px-2 py-1.5 border">Rack B-01</td>
+                                                        <td className="px-2 py-1.5 border">Progressive die</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Upload Form */}
+                                    <form onSubmit={handleDiesSubmit} className="space-y-4">
+                                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                                            <div className="space-y-2">
+                                                <div className="text-4xl">📁</div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Select Excel File (. xlsx, .xls, .csv)
+                                                </label>
+                                                <input
+                                                    type="file"
+                                                    accept=".xlsx,.xls,.csv"
+                                                    onChange={(e) => diesForm.setData('file', e.target.files[0])}
+                                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                                                />
+                                                {diesForm. data.file && (
+                                                    <p className="text-sm text-green-600 mt-2">
+                                                        ✓ Selected: {diesForm.data.file.name}
+                                                    </p>
+                                                )}
+                                                {diesForm.errors.file && (
+                                                    <p className="text-red-500 text-xs mt-1">{diesForm.errors.file}</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={diesForm.processing || !diesForm.data.file}
+                                            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                        >
+                                            {diesForm.processing ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                    Importing...
+                                                </span>
+                                            ) : '📤 Import Dies Master'}
+                                        </button>
+                                    </form>
+
+                                    {/* Info */}
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                        <h4 className="font-medium text-blue-800 dark: text-blue-200 flex items-center gap-2">
+                                            <span>ℹ️</span> Import Behavior:
+                                        </h4>
+                                        <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 list-disc list-inside space-y-1">
+                                            <li>If Part Number exists → Die will be <strong>updated</strong></li>
+                                            <li>If Part Number is new → Die will be <strong>created</strong></li>
+                                            <li>Model code must match existing:  <code className="bg-blue-100 px-1 rounded">KS</code>, <code className="bg-blue-100 px-1 rounded">4L45W</code>, <code className="bg-blue-100 px-1 rounded">2SJ</code>, <code className="bg-blue-100 px-1 rounded">2SK</code>, etc.</li>
+                                            <li>Customer will be auto-created if not exists</li>
+                                            <li>Control Stroke overrides standard stroke from tonnage setting</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Available Models Reference */}
+                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">📚 Available Machine Models:</h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['KS', '4L45W', '2SJ', '2SK', 'T64', 'YHA', '2JX', '560B']. map((model) => (
+                                                <span key={model} className="px-2 py-1 bg-white dark:bg-gray-800 rounded border text-sm">
+                                                    {model}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ==================== PPM Schedule Template ==================== */}
+                            {activeTab === 'schedule' && (
+                                <div className="space-y-6">
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                            📅 Download PPM Schedule Template
+                                        </h3>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Download PPM Schedule template matching your original Excel format
+                                        </p>
+                                    </div>
+
+                                    {/* Template Preview */}
+   <div className="border border-gray-300 rounded-lg overflow-hidden">
+                                        {/* Header Title */}
+                                        <div className="bg-green-700 text-white text-center py-4">
+                                            <h4 className="text-xl font-bold">SCHEDULE</h4>
+                                            <h5 className="text-lg">PREVENTIVE MAINTENANCE DIES</h5>
+                                        </div>
+
+                                        {/* Info Header */}
+                                        <div className="bg-white p-4 border-b">
+                                            <div className="grid grid-cols-4 gap-4 text-sm">
+                                                <div>
+                                                    <span className="text-gray-500">Year: </span>
+                                                    <span className="font-medium ml-2">2025</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">Model:</span>
+                                                    <span className="font-medium ml-2">KS (Grade B)</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">Customer:</span>
+                                                    <span className="font-medium ml-2">HMMI</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-gray-500">Issued:</span>
+                                                    <span className="font-medium ml-2">Rydha RG</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Table */}
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-xs border-collapse">
+                                                {/* Main Header */}
+                                                <thead>
+                                                    <tr className="bg-green-600 text-white">
+                                                        <th className="border border-green-500 px-2 py-2 w-10 text-center" rowSpan={2}>NO</th>
+                                                        <th className="border border-green-500 px-2 py-2 w-48 text-center" rowSpan={2}>NAME/PART<br/>NUMBER DIE</th>
+                                                        <th className="border border-green-500 px-2 py-2 w-16 text-center" rowSpan={2}>MODEL</th>
+                                                        <th className="border border-green-500 px-2 py-2 w-14 text-center" rowSpan={2}>TOTAL<br/>DIE</th>
+                                                        <th className="border border-green-500 px-2 py-2 w-32 text-center" rowSpan={2}>ACCUMULATION</th>
+                                                        <th className="border border-green-500 px-2 py-2 w-20 text-center" rowSpan={2}>LAST<br/>STROKE</th>
+                                                        <th className="border border-green-500 px-2 py-2 w-20 text-center" rowSpan={2}>PLAN</th>
+                                                        {/* Month Headers */}
+                                                        {months.slice(0, 6).map((month) => (
+                                                            <th key={month} className="border border-green-500 px-1 py-2 text-center" colSpan={4}>
+                                                                {month}
+                                                            </th>
+                                                        ))}
+                                                        <th className="border border-green-500 px-2 py-2 text-center" rowSpan={2}>... </th>
+                                                    </tr>
+                                                    <tr className="bg-green-500 text-white">
+                                                        {/* Week Numbers for each month */}
+                                                        {months.slice(0, 6).map((month) => (
+                                                            ['I', 'II', 'III', 'IV']. map((week, idx) => (
+                                                                <th key={`${month}-${week}`} className="border border-green-400 px-1 py-1 text-center w-8">
+                                                                    {week}
+                                                                </th>
+                                                            ))
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+
+                                                <tbody className="bg-white">
+                                                    {/* Customer Section Header */}
+                                                    <tr className="bg-green-100">
+                                                        <td colSpan={31} className="border px-3 py-2 font-semibold text-green-800">
+                                                            HMMI (KS & 800T)
+                                                        </td>
+                                                    </tr>
+
+                                                    {/* Die Entries */}
+                                                    {sampleDies.map((die, dieIndex) => (
+                                                        <>
+                                                            {/* Row 1: Part Number + Forecast */}
+                                                            <tr key={`${die.no}-1`} className="border-t-2 border-gray-300">
+                                                                <td className="border px-2 py-1 text-center font-medium bg-gray-50" rowSpan={6}>
+                                                                    {die.no}
+                                                                </td>
+                                                                <td className="border px-2 py-1 text-blue-600 font-medium">
+                                                                    {die.partNumber}
+                                                                </td>
+                                                                <td className="border px-2 py-1 text-center bg-gray-50" rowSpan={6}>
+                                                                    {die.model}
+                                                                </td>
+                                                                <td className="border px-2 py-1 text-center bg-gray-50" rowSpan={6}>
+                                                                    {die.totalDie}
+                                                                </td>
+                                                                <td className="border px-2 py-1 text-xs text-gray-600">
+                                                                    ACCUMULATION STROKE
+                                                                </td>
+                                                                <td className="border px-2 py-1 text-center">
+                                                                    {die.accStroke}
+                                                                </td>
+                                                                <td className="border px-2 py-1 text-xs bg-gray-50">
+                                                                    Forecast
+                                                                </td>
+                                                                {/* Forecast values - Week I of each month */}
+                                                                {die.forecast.slice(0, 6).map((val, idx) => (
+                                                                    <>
+                                                                        <td key={`f-${idx}-1`} className="border px-1 py-1 text-center text-xs">{val}</td>
+                                                                        <td key={`f-${idx}-2`} className="border px-1 py-1 text-center text-gray-400">-</td>
+                                                                        <td key={`f-${idx}-3`} className="border px-1 py-1 text-center text-gray-400">-</td>
+                                                                        <td key={`f-${idx}-4`} className="border px-1 py-1 text-center text-gray-400">-</td>
+                                                                    </>
+                                                                ))}
+                                                                <td className="border px-2 py-1 text-center text-gray-400">... </td>
+                                                            </tr>
+
+                                                            {/* Row 2: Part Name + Plan */}
+                                                            <tr key={`${die.no}-2`}>
+                                                                <td className="border px-2 py-1 text-gray-600 text-xs">
+                                                                    {die.partName}
+                                                                </td>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1 text-xs bg-gray-50">
+                                                                    Plan
+                                                                </td>
+                                                                {[...Array(24)].map((_, idx) => (
+                                                                    <td key={`plan-${idx}`} className="border px-1 py-1 text-center">
+                                                                        {idx === 8 && dieIndex === 0 ? (
+                                                                            <span className="inline-flex items-center justify-center w-5 h-5 bg-green-600 text-white rounded text-xs font-bold">4</span>
+                                                                        ) : ''}
+                                                                    </td>
+                                                                ))}
+                                                                <td className="border px-2 py-1"></td>
+                                                            </tr>
+
+                                                            {/* Row 3: Accumulation All + Actual */}
+                                                            <tr key={`${die.no}-3`}>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1 text-xs text-gray-600">
+                                                                    ACCUMULATION ALL STROKE
+                                                                </td>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1 text-xs bg-gray-50">
+                                                                    Actual
+                                                                </td>
+                                                                {[... Array(24)].map((_, idx) => (
+                                                                    <td key={`actual-${idx}`} className="border px-1 py-1 text-center">
+                                                                        {idx === 8 && dieIndex === 0 ? (
+                                                                            <span className="text-lg">●</span>
+                                                                        ) : ''}
+                                                                    </td>
+                                                                ))}
+                                                                <td className="border px-2 py-1"></td>
+                                                            </tr>
+
+                                                            {/* Row 4: Control Stroke + Stroke */}
+                                                            <tr key={`${die.no}-4`}>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1 text-xs text-gray-600">
+                                                                    CONTROL STROKE
+                                                                </td>
+                                                                <td className="border px-2 py-1 text-center">
+                                                                    {die.lastStroke}
+                                                                </td>
+                                                                <td className="border px-2 py-1 text-xs bg-gray-50">
+                                                                    Stroke
+                                                                </td>
+                                                                {[...Array(24)].map((_, idx) => (
+                                                                    <td key={`stroke-${idx}`} className="border px-1 py-1 text-center text-xs">
+                                                                        {idx === 8 && dieIndex === 0 ? '5230' : ''}
+                                                                    </td>
+                                                                ))}
+                                                                <td className="border px-2 py-1"></td>
+                                                            </tr>
+
+                                                            {/* Row 5: PPM Date */}
+                                                            <tr key={`${die.no}-5`}>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1 text-xs bg-gray-50">
+                                                                    PPM Date
+                                                                </td>
+                                                                {[... Array(24)].map((_, idx) => (
+                                                                    <td key={`ppmdate-${idx}`} className="border px-1 py-1"></td>
+                                                                ))}
+                                                                <td className="border px-2 py-1"></td>
+                                                            </tr>
+
+                                                            {/* Row 6: Pic */}
+                                                            <tr key={`${die.no}-6`}>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1"></td>
+                                                                <td className="border px-2 py-1 text-xs bg-gray-50">
+                                                                    Pic
+                                                                </td>
+                                                                {[...Array(24)].map((_, idx) => (
+                                                                    <td key={`pic-${idx}`} className="border px-1 py-1"></td>
+                                                                ))}
+                                                                <td className="border px-2 py-1"></td>
+                                                            </tr>
+                                                        </>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+
+                                    {/* Download Button */}
+                                    <div className="flex justify-center">
+                                        <a
+                                            href={route('import.template.ppm-schedule')}
+                                            className="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-3 text-lg font-medium shadow-lg"
+                                        >
+                                            <span className="text-2xl">📥</span>
+                                            Download PPM Schedule Template
+                                        </a>
+                                    </div>
+
+                                    {/* Legend */}
+                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">📝 Template Legend:</h4>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-6 h-6 bg-black rounded-full flex items-center justify-center text-white text-xs">●</span>
+                                                <span>PPM Done</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-6 h-6 bg-green-500 rounded flex items-center justify-center text-white text-xs font-bold">4</span>
+                                                <span>Planned Week</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-6 h-6 bg-red-500 rounded flex items-center justify-center text-white text-xs font-bold">! </span>
+                                                <span>Overdue</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-gray-400">-</span>
+                                                <span>No Activity</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </AppLayout>
+    );
+}
