@@ -22,7 +22,7 @@ class ProductionLogController extends Controller
      */
     public function index(Request $request)
     {
-        $logs = ProductionLog::with(['die:id,part_number,part_name', 'createdBy:id,name'])
+        $logs = ProductionLog::with(['die:id,part_number,part_name,qty_die', 'createdBy:id,name'])
             ->when($request->date_from, fn($q, $date) => $q->where('production_date', '>=', $date))
             ->when($request->date_to, fn($q, $date) => $q->where('production_date', '<=', $date))
             ->when($request->die_id, fn($q, $dieId) => $q->where('die_id', $dieId))
@@ -45,7 +45,7 @@ class ProductionLogController extends Controller
         return Inertia::render('Production/Create', [
             'dies' => DieModel::with(['customer:id,code', 'machineModel:id,code'])
                 ->active()
-                ->get(['id', 'part_number', 'part_name', 'customer_id', 'machine_model_id', 'line']),
+                ->get(['id', 'part_number', 'part_name', 'customer_id', 'machine_model_id', 'line', 'qty_die']),
         ]);
     }
 
@@ -61,10 +61,11 @@ class ProductionLogController extends Controller
 
         $validated = $request->validate([
             'die_id' => 'required|exists:dies,id',
+            'model' => 'nullable|string|max:20',
             'production_date' => 'required|date',
             'shift' => 'required|integer|in:1,2,3',
             'line' => 'nullable|string|max:20',
-            'running_process' => 'nullable|in:Auto,Manual',
+            'running_process' => 'nullable|in:Auto,Manual,Blanking',
             'start_time' => 'nullable|date_format:H:i',
             'finish_time' => 'nullable|date_format:H:i',
             'total_hours' => 'nullable|numeric|min:0',
@@ -77,6 +78,95 @@ class ProductionLogController extends Controller
 
         return redirect()->route('production.index')
             ->with('success', 'Production log added successfully.');
+    }
+
+    /**
+     * Display the specified production log.
+     */
+    public function show(ProductionLog $production)
+    {
+        $production->load(['die:id,part_number,part_name,qty_die,customer_id', 'die.customer:id,code,name', 'createdBy:id,name']);
+
+        return Inertia::render('Production/Show', [
+            'log' => $production,
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified production log.
+     */
+    public function edit(ProductionLog $production)
+    {
+        $production->load(['die']);
+
+        return Inertia::render('Production/Edit', [
+            'log' => $production,
+            'dies' => DieModel::with(['customer:id,code', 'machineModel:id,code'])
+                ->active()
+                ->get(['id', 'part_number', 'part_name', 'customer_id', 'machine_model_id', 'line', 'qty_die']),
+        ]);
+    }
+
+    /**
+     * Update the specified production log.
+     */
+    public function update(Request $request, ProductionLog $production)
+    {
+        $request->merge([
+            'start_time' => $this->normalizeTimeInput($request->input('start_time')),
+            'finish_time' => $this->normalizeTimeInput($request->input('finish_time')),
+        ]);
+
+        $validated = $request->validate([
+            'die_id' => 'required|exists:dies,id',
+            'model' => 'nullable|string|max:20',
+            'production_date' => 'required|date',
+            'shift' => 'required|integer|in:1,2,3',
+            'line' => 'nullable|string|max:20',
+            'running_process' => 'nullable|in:Auto,Manual,Blanking',
+            'start_time' => 'nullable|date_format:H:i',
+            'finish_time' => 'nullable|date_format:H:i',
+            'total_hours' => 'nullable|numeric|min:0',
+            'total_minutes' => 'nullable|integer|min:0',
+            'break_time' => 'nullable|integer|min:0',
+            'output_qty' => 'required|integer|min:1',
+        ]);
+
+        // Calculate difference in output_qty to adjust die's accumulation_stroke
+        $oldOutputQty = $production->output_qty;
+        $newOutputQty = $validated['output_qty'];
+        $difference = $newOutputQty - $oldOutputQty;
+
+        // Update the log
+        $production->update($validated);
+
+        // Adjust die accumulation stroke if output changed
+        if ($difference !== 0) {
+            $die = DieModel::find($validated['die_id']);
+            if ($die) {
+                $die->increment('accumulation_stroke', $difference);
+            }
+        }
+
+        return redirect()->route('production.index')
+            ->with('success', 'Production log updated successfully.');
+    }
+
+    /**
+     * Remove the specified production log.
+     */
+    public function destroy(ProductionLog $production)
+    {
+        // Subtract output_qty from die's accumulation_stroke
+        $die = DieModel::find($production->die_id);
+        if ($die) {
+            $die->decrement('accumulation_stroke', $production->output_qty);
+        }
+
+        $production->delete();
+
+        return redirect()->route('production.index')
+            ->with('success', 'Production log deleted successfully.');
     }
 
     private function normalizeTimeInput($value): ?string

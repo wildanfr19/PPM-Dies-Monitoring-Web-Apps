@@ -16,16 +16,22 @@ class DieModel extends Model
     protected $fillable = [
         'part_number',
         'part_name',
+        'model',              // Model produk (20QX, KS, 5H45, etc)
         'machine_model_id',
         'customer_id',
         'qty_die',
         'line',
+        'lot_size',           // Lot size per batch (600, 5000)
+        'ppm_standard',       // Standard stroke untuk PPM (6000, 5000) - mengacu pada langkah standar
         'accumulation_stroke',
+        'ppm_count',          // Jumlah PPM yang sudah dilakukan
+        'stroke_at_last_ppm', // Stroke saat PPM terakhir dilakukan
         'last_stroke',
-        'control_stroke',
+        'control_stroke',     // Override manual jika diperlukan
         'last_ppm_date',
         'location',
         'status',
+        'ppm_alert_status',   // Status alert: null, 'orange_alerted', 'red_alerted', 'ppm_scheduled', 'ppm_in_progress'
         'notes',
     ];
 
@@ -63,55 +69,119 @@ class DieModel extends Model
     // ==================== ACCESSORS ====================
 
     /**
-     * Get standard stroke (from control_stroke or tonnage standard)
+     * Get standard stroke untuk PPM
+     * Prioritas: control_stroke (manual override) -> ppm_standard -> tonnage standard
+     * Ini adalah langkah standar yang ditentukan sebelum cetakan perlu PPM
      */
     public function getStandardStrokeAttribute()
     {
-        return $this->control_stroke
-            ?? ($this->machineModel?->tonnageStandard?->standard_stroke ?? 0);
+        // 1. Manual override dari control_stroke
+        if ($this->control_stroke && $this->control_stroke > 0) {
+            return $this->control_stroke;
+        }
+
+        // 2. PPM Standard dari data die (dari import Excel)
+        if ($this->ppm_standard && $this->ppm_standard > 0) {
+            return $this->ppm_standard;
+        }
+
+        // 3. Default dari tonnage standard machine model
+        return $this->machineModel?->tonnageStandard?->standard_stroke ?? 6000;
     }
 
     /**
-     * Get lot size from tonnage standard
+     * Get lot size
+     * Prioritas: lot_size dari die -> default dari tonnage standard
      */
-    public function getLotSizeAttribute()
+    public function getLotSizeValueAttribute()
     {
-        return $this->machineModel?->tonnageStandard?->lot_size ??  2500;
+        if ($this->attributes['lot_size'] && $this->attributes['lot_size'] > 0) {
+            return $this->attributes['lot_size'];
+        }
+        return $this->machineModel?->tonnageStandard?->lot_size ?? 600;
     }
 
     /**
-     * Get remaining strokes until PPM needed
+     * Get remaining strokes until NEXT PPM checkpoint
+     * Based on "every 4 lots" rule
      */
     public function getRemainingStrokesAttribute()
     {
-        return $this->standard_stroke - $this->accumulation_stroke;
+        return max(0, $this->next_ppm_stroke - $this->accumulation_stroke);
     }
 
     /**
-     * Get stroke percentage
+     * Get stroke percentage towards NEXT PPM checkpoint
      */
     public function getStrokePercentageAttribute()
     {
-        if ($this->standard_stroke <= 0) return 0;
-        return round(($this->accumulation_stroke / $this->standard_stroke) * 100, 1);
+        $nextPpm = $this->next_ppm_stroke;
+        $lastPpm = $this->stroke_at_last_ppm ?? 0;
+        $range = $nextPpm - $lastPpm;
+
+        if ($range <= 0) return 100;
+
+        $progress = $this->accumulation_stroke - $lastPpm;
+        return round(($progress / $range) * 100, 1);
     }
 
     /**
-     * Get remaining lots
+     * Get remaining lots until NEXT PPM checkpoint
      */
     public function getRemainingLotsAttribute()
     {
-        if ($this->lot_size <= 0) return 0;
-        return round($this->remaining_strokes / $this->lot_size, 2);
+        $lotSize = $this->lot_size_value;
+        if ($lotSize <= 0) return 0;
+        return round($this->remaining_strokes / $lotSize, 2);
     }
 
     /**
-     * Get current lot number
+     * Get current lot number (since last PPM)
      */
     public function getCurrentLotAttribute()
     {
-        if ($this->lot_size <= 0) return 0;
-        return floor($this->accumulation_stroke / $this->lot_size) + 1;
+        $lotSize = $this->lot_size_value;
+        if ($lotSize <= 0) return 0;
+
+        $strokeSinceLastPpm = $this->accumulation_stroke - ($this->stroke_at_last_ppm ?? 0);
+        return floor($strokeSinceLastPpm / $lotSize) + 1;
+    }
+
+    /**
+     * Get lots per PPM cycle (fixed at 4)
+     */
+    public function getLotsPerPpmAttribute()
+    {
+        return 4; // PPM required every 4 lots
+    }
+
+    /**
+     * Get next PPM stroke checkpoint
+     * PPM is required every 4 lots
+     */
+    public function getNextPpmStrokeAttribute()
+    {
+        $lotSize = $this->lot_size_value;
+        if ($lotSize <= 0) return $this->standard_stroke;
+
+        // Next PPM = stroke_at_last_ppm + (4 lots * lot_size)
+        $lastPpmStroke = $this->stroke_at_last_ppm ?? 0;
+        $nextCheckpoint = $lastPpmStroke + ($this->lots_per_ppm * $lotSize);
+
+        // Don't exceed standard stroke
+        return min($nextCheckpoint, $this->standard_stroke);
+    }
+
+    /**
+     * Get total PPM checkpoints needed to reach standard
+     */
+    public function getTotalPpmCheckpointsAttribute()
+    {
+        $lotSize = $this->lot_size_value;
+        if ($lotSize <= 0) return 1;
+
+        $totalLots = ceil($this->standard_stroke / $lotSize);
+        return ceil($totalLots / $this->lots_per_ppm);
     }
 
     /**
@@ -119,61 +189,227 @@ class DieModel extends Model
      */
     public function getTotalLotsAttribute()
     {
-        if ($this->lot_size <= 0) return 0;
-        return ceil($this->standard_stroke / $this->lot_size);
+        $lotSize = $this->lot_size_value;
+        if ($lotSize <= 0) return 0;
+        return (int) ceil($this->standard_stroke / $lotSize);
     }
 
     /**
-     * Get status (green/orange/red)
+     * Get PPM status (green/orange/red)
+     *
+     * NEW LOGIC - Based on "Every 4 Lots" Rule:
+     *
+     * Example: Standard 6000, Lot Size 375, Total 16 lots
+     * PPM Checkpoints: Lot 4 (1500), Lot 8 (3000), Lot 12 (4500), Lot 16 (6000)
+     *
+     * After each PPM, stroke_at_last_ppm is updated, ppm_count incremented
+     *
+     * Status Logic (relative to NEXT checkpoint):
+     * - GREEN: Current lot 1-2 of 4-lot cycle (< 75% to next checkpoint)
+     * - ORANGE: Current lot 3 of 4-lot cycle (75-99% to next checkpoint)
+     * - RED: Current lot 4+ (>= next checkpoint, PPM overdue!)
      */
     public function getPpmStatusAttribute()
     {
-        if ($this->remaining_strokes <= 0) {
+        $lotSize = $this->lot_size_value;
+        if ($lotSize <= 0) return 'green';
+
+        $nextPpmStroke = $this->next_ppm_stroke;
+        $lastPpmStroke = $this->stroke_at_last_ppm ?? 0;
+
+        // Calculate thresholds based on next PPM checkpoint
+        // Orange: 1 lot before next PPM (75% of cycle)
+        $orangeThreshold = $nextPpmStroke - $lotSize;
+
+        // RED: Accumulation has reached or exceeded next PPM checkpoint
+        if ($this->accumulation_stroke >= $nextPpmStroke) {
             return 'red';
-        } elseif ($this->remaining_lots <= 1) {
+        }
+
+        // ORANGE: Within 1 lot of next PPM checkpoint
+        if ($this->accumulation_stroke >= $orangeThreshold) {
             return 'orange';
         }
+
+        // GREEN: OK, still safe
         return 'green';
     }
 
     /**
-     * Get status label
+     * Get status label sesuai flow PPM Dies Controlling
      */
     public function getPpmStatusLabelAttribute()
     {
+        $ppmNumber = ($this->ppm_count ?? 0) + 1;
+        $nextPpmStroke = number_format($this->next_ppm_stroke);
+
         return match($this->ppm_status) {
-            'red' => 'Critical - Need PPM Now! ',
-            'orange' => 'Warning - Plan PPM Soon',
-            'green' => 'OK',
+            'red' => "🔴 CRITICAL - PPM #{$ppmNumber} Required! (at {$nextPpmStroke} strokes)",
+            'orange' => "🟠 WARNING - Approaching PPM #{$ppmNumber} (at {$nextPpmStroke} strokes)",
+            'green' => '🟢 OK - Within Normal Limit',
             default => 'Unknown',
+        };
+
+    }
+
+    /**
+     * Get alert status label
+     */
+    public function getPpmAlertStatusLabelAttribute()
+    {
+        return match($this->ppm_alert_status) {
+            'orange_alerted' => 'Orange Alert Sent',
+            'red_alerted' => 'Red Alert Sent - Awaiting PPM',
+            'ppm_scheduled' => 'PPM Scheduled',
+            'ppm_in_progress' => 'PPM In Progress',
+            default => null,
         };
     }
 
     /**
+     * Get PPM trigger condition info
+     * Kondisi 1: PPM karena mencapai Standard Stroke (akhir lifecycle)
+     * Kondisi 2: PPM karena setiap 4 lot (checkpoint periodik)
+     *
+     * Returns which condition will trigger PPM first
+     */
+    public function getPpmTriggerConditionAttribute()
+    {
+        $nextPpmStroke = $this->next_ppm_stroke;
+        $standardStroke = $this->standard_stroke;
+
+        // Jika next PPM = standard stroke, berarti ini adalah PPM terakhir (kondisi 1 & 2 bertemu)
+        if ($nextPpmStroke >= $standardStroke) {
+            return [
+                'type' => 'both',
+                'label' => 'Condition 1 & 2',
+                'description' => 'Standard Stroke & 4-Lot Checkpoint',
+            ];
+        }
+
+        // Kondisi 2: PPM karena 4 lot checkpoint
+        return [
+            'type' => 'condition_2',
+            'label' => 'Condition 2',
+            'description' => '4-Lot Checkpoint',
+        ];
+    }
+
+    /**
+     * Get PPM conditions info for display
+     * Shows both conditions with their targets
+     */
+    public function getPpmConditionsInfoAttribute()
+    {
+        $lotSize = $this->lot_size_value;
+        $standardStroke = $this->standard_stroke;
+        $nextPpmStroke = $this->next_ppm_stroke;
+        $accumulation = $this->accumulation_stroke;
+        $ppmCount = $this->ppm_count ?? 0;
+
+        // Kondisi 1: Target Standard Stroke
+        $condition1 = [
+            'name' => 'Condition 1',
+            'description' => 'Standard Stroke',
+            'target' => $standardStroke,
+            'remaining' => max(0, $standardStroke - $accumulation),
+            'percentage' => $standardStroke > 0 ? round(($accumulation / $standardStroke) * 100, 1) : 0,
+            'is_active' => $nextPpmStroke >= $standardStroke,
+        ];
+
+        // Kondisi 2: Target setiap 4 lot
+        $condition2 = [
+            'name' => 'Condition 2',
+            'description' => '4-Lot Checkpoint (PPM #' . ($ppmCount + 1) . ')',
+            'target' => $nextPpmStroke,
+            'remaining' => max(0, $nextPpmStroke - $accumulation),
+            'percentage' => $this->stroke_percentage,
+            'is_active' => $nextPpmStroke < $standardStroke,
+        ];
+
+        return [
+            'condition_1' => $condition1,
+            'condition_2' => $condition2,
+            'next_trigger' => $nextPpmStroke < $standardStroke ? 'condition_2' : 'condition_1',
+        ];
+    }
+
+    /**
      * Get lot progress for visualization
+     *
+     * Berdasarkan ilustrasi whiteboard:
+     * - Standard: 10,000 strokes, Lot Size: 2,500
+     * - 10,000 / 2,500 = 4 lots
+     *
+     * Signal/Alert Logic berdasarkan ZONA (bukan status completed):
+     * - Lot #1, #2: Green zone (aman)
+     * - Lot #3 (5,000-7,500): Orange zone - Remaining 1 lot size (Warning)
+     * - Lot #4 (7,500-10,000): Red zone - Mendekati/melebihi standard (Critical)
+     *
+     * Visualisasi (selalu menunjukkan zona):
+     * | Lot #1 | Lot #2 | Lot #3 | Lot #4 |
+     * |  Gn    |   Gn   |  Ora   |  Red   |
      */
     public function getLotProgressAttribute()
     {
         $lots = [];
         $totalLots = $this->total_lots;
-        $currentLot = $this->current_lot;
-        $remainingLots = $this->remaining_lots;
+        $lotSize = $this->lot_size_value;
+        $standardStroke = $this->standard_stroke;
+        $accumulationStroke = $this->accumulation_stroke;
+
+        if ($totalLots <= 0) {
+            return $lots;
+        }
 
         for ($i = 1; $i <= $totalLots; $i++) {
-            $lotStrokeEnd = $i * $this->lot_size;
+            $lotStrokeStart = ($i - 1) * $lotSize;
+            $lotStrokeEnd = min($i * $lotSize, $standardStroke);
 
-            if ($this->accumulation_stroke >= $lotStrokeEnd) {
-                // Lot completed
-                $status = ($remainingLots <= 0) ? 'red' : 'green';
-                $lots[] = ['lot' => $i, 'status' => $status, 'completed' => true];
-            } elseif ($this->accumulation_stroke >= ($i - 1) * $this->lot_size) {
-                // Current lot (in progress)
-                $status = ($remainingLots <= 1) ? 'orange' : 'green';
-                $lots[] = ['lot' => $i, 'status' => $status, 'completed' => false];
+            // Tentukan ZONA lot ini (warna tetap berdasarkan posisi, bukan progress)
+            // Lot terakhir = Red zone
+            // Lot sebelum terakhir = Orange zone
+            // Lot lainnya = Green zone
+            $isLastLot = ($i === $totalLots);
+            $isSecondLastLot = ($i === $totalLots - 1);
+
+            // Warna zona (tetap tidak berubah)
+            if ($isLastLot) {
+                $zoneColor = 'red';
+            } elseif ($isSecondLastLot) {
+                $zoneColor = 'orange';
             } else {
-                // Future lot
-                $lots[] = ['lot' => $i, 'status' => 'empty', 'completed' => false];
+                $zoneColor = 'green';
             }
+
+            // Tentukan status lot (completed, current, atau empty)
+            $isCompleted = ($accumulationStroke >= $lotStrokeEnd);
+            $isCurrent = (!$isCompleted && $accumulationStroke >= $lotStrokeStart);
+            $isEmpty = (!$isCompleted && !$isCurrent);
+
+            $lotData = [
+                'lot' => $i,
+                'zone' => $zoneColor,           // Warna zona tetap
+                'status' => $zoneColor,         // Status = zona untuk backward compatibility
+                'completed' => $isCompleted,
+                'current' => $isCurrent,
+                'stroke_start' => $lotStrokeStart,
+                'stroke_end' => $lotStrokeEnd,
+            ];
+
+            // Jika empty, tambahkan suffix untuk styling
+            if ($isEmpty) {
+                $lotData['status'] = $zoneColor . '-empty';
+            }
+
+            // Jika current lot, tambahkan info progress
+            if ($isCurrent) {
+                $lotData['current_stroke'] = $accumulationStroke;
+                $progressInLot = $accumulationStroke - $lotStrokeStart;
+                $lotData['lot_percentage'] = round(($progressInLot / $lotSize) * 100, 1);
+            }
+
+            $lots[] = $lotData;
         }
 
         return $lots;
@@ -186,19 +422,58 @@ class DieModel extends Model
         return $query->where('status', 'active');
     }
 
+    /**
+     * Scope for dies needing PPM (red status)
+     */
     public function scopeCritical($query)
     {
-        return $query->whereRaw('accumulation_stroke >= COALESCE(control_stroke,
+        return $query->whereRaw('accumulation_stroke >= COALESCE(
+            control_stroke,
+            ppm_standard,
             (SELECT standard_stroke FROM tonnage_standards ts
              JOIN machine_models mm ON mm.tonnage_standard_id = ts.id
-             WHERE mm.id = dies.machine_model_id))');
+             WHERE mm.id = dies.machine_model_id)
+        )');
     }
 
+    /**
+     * Scope for dies in warning status (orange)
+     */
     public function scopeWarning($query)
     {
-        return $query->whereRaw('accumulation_stroke >= COALESCE(control_stroke,
-            (SELECT standard_stroke - lot_size FROM tonnage_standards ts
+        return $query->whereRaw('accumulation_stroke >= COALESCE(
+            control_stroke,
+            ppm_standard,
+            (SELECT standard_stroke FROM tonnage_standards ts
              JOIN machine_models mm ON mm.tonnage_standard_id = ts.id
-             WHERE mm.id = dies.machine_model_id))');
+             WHERE mm.id = dies.machine_model_id)
+        ) - COALESCE(
+            dies.lot_size,
+            (SELECT lot_size FROM tonnage_standards ts
+             JOIN machine_models mm ON mm.tonnage_standard_id = ts.id
+             WHERE mm.id = dies.machine_model_id),
+            600
+        )');
+    }
+
+    /**
+     * Scope for dies needing attention (orange or red)
+     */
+    public function scopeNeedsAttention($query)
+    {
+        // Dies where remaining strokes is less than 1 lot
+        return $query->whereRaw('accumulation_stroke >= COALESCE(
+            control_stroke,
+            ppm_standard,
+            (SELECT standard_stroke FROM tonnage_standards ts
+             JOIN machine_models mm ON mm.tonnage_standard_id = ts.id
+             WHERE mm.id = dies.machine_model_id)
+        ) - COALESCE(
+            dies.lot_size,
+            (SELECT lot_size FROM tonnage_standards ts
+             JOIN machine_models mm ON mm.tonnage_standard_id = ts.id
+             WHERE mm.id = dies.machine_model_id),
+            600
+        )');
     }
 }

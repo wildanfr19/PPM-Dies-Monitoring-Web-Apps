@@ -60,7 +60,7 @@ export default function ReportsIndex({ auth, customers, machineModels, stats }) 
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
                             <div className="bg-green-600 text-white px-6 py-4">
                                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    <span>📊</span> Dies Status Report
+                                    <i className="fas fa-chart-bar"></i> Dies Status Report
                                 </h3>
                                 <p className="text-green-100 text-sm mt-1">
                                     Complete status of all dies with PPM progress
@@ -97,13 +97,13 @@ export default function ReportsIndex({ auth, customers, machineModels, stats }) 
                                         href={`${route('reports.dies.excel')}?${buildQueryString(filters)}`}
                                         className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-center font-medium flex items-center justify-center gap-2"
                                     >
-                                        <span>📥</span> Export Excel
+                                        <i className="fas fa-file-excel"></i> Export Excel
                                     </a>
                                     <a
                                         href={`${route('reports.dies.pdf')}?${buildQueryString(filters)}`}
                                         className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-center font-medium flex items-center justify-center gap-2"
                                     >
-                                        <span>📄</span> Export PDF
+                                        <i className="fas fa-file-pdf"></i> Export PDF
                                     </a>
                                 </div>
                             </div>
@@ -113,7 +113,7 @@ export default function ReportsIndex({ auth, customers, machineModels, stats }) 
                         <div className="bg-white dark: bg-gray-800 rounded-lg shadow-sm overflow-hidden">
                             <div className="bg-red-600 text-white px-6 py-4">
                                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    <span>🚨</span> Critical Dies Report
+                                    <i className="fas fa-exclamation-circle"></i> Critical Dies Report
                                 </h3>
                                 <p className="text-red-100 text-sm mt-1">
                                     Dies requiring immediate PPM attention
@@ -133,7 +133,7 @@ export default function ReportsIndex({ auth, customers, machineModels, stats }) 
                                     href={route('reports.critical.pdf')}
                                     className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover: bg-red-700 transition text-center font-medium flex items-center justify-center gap-2"
                                 >
-                                    <span>📄</span> Download Critical Report (PDF)
+                                    <i className="fas fa-file-pdf"></i> Download Critical Report (PDF)
                                 </a>
                             </div>
                         </div>
@@ -142,7 +142,7 @@ export default function ReportsIndex({ auth, customers, machineModels, stats }) 
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
                             <div className="bg-blue-600 text-white px-6 py-4">
                                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    <span>📋</span> PPM History Report
+                                    <i className="fas fa-clipboard-list"></i> PPM History Report
                                 </h3>
                                 <p className="text-blue-100 text-sm mt-1">
                                     Historical PPM records and maintenance logs
@@ -177,7 +177,7 @@ export default function ReportsIndex({ auth, customers, machineModels, stats }) 
                                     })}`}
                                     className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center font-medium flex items-center justify-center gap-2"
                                 >
-                                    <span>📥</span> Export PPM History (Excel)
+                                    <i className="fas fa-file-excel"></i> Export PPM History (Excel)
                                 </a>
                             </div>
                         </div>
@@ -186,7 +186,7 @@ export default function ReportsIndex({ auth, customers, machineModels, stats }) 
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
                             <div className="bg-purple-600 text-white px-6 py-4">
                                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    <span>⚙️</span> Production Report
+                                    <i className="fas fa-cogs"></i> Production Report
                                 </h3>
                                 <p className="text-purple-100 text-sm mt-1">
                                     Daily production output and stroke records
@@ -221,7 +221,7 @@ export default function ReportsIndex({ auth, customers, machineModels, stats }) 
                                     })}`}
                                     className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-center font-medium flex items-center justify-center gap-2"
                                 >
-                                    <span>📥</span> Export Production (Excel)
+                                    <i className="fas fa-file-excel"></i> Export Production (Excel)
                                 </a>
                             </div>
                         </div>

@@ -7,12 +7,19 @@ export default function StatsCard({ title, value, icon, color = 'blue', subtitle
         gray: 'bg-gray-500',
     };
 
+    // Check if icon is FontAwesome class (starts with fa-) or emoji
+    const isFontAwesome = icon && icon.startsWith('fa-');
+
     return (
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
             <div className="p-6">
                 <div className="flex items-center">
                     <div className={`flex-shrink-0 p-3 rounded-lg ${colorClasses[color]}`}>
-                        <span className="text-2xl text-white">{icon}</span>
+                        {isFontAwesome ? (
+                            <i className={`fas ${icon} text-2xl text-white`}></i>
+                        ) : (
+                            <span className="text-2xl text-white">{icon}</span>
+                        )}
                     </div>
                     <div className="ml-4">
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">

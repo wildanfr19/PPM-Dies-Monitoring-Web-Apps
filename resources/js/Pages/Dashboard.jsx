@@ -21,7 +21,7 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
             user={auth.user}
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                    📊 Dashboard
+                    <i className="fas fa-chart-pie mr-2"></i> Dashboard
                 </h2>
             }
         >
@@ -34,27 +34,27 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                     <StatsCard
                         title="Total Dies"
                         value={stats?.total || 0}
-                        icon="🔧"
+                        icon="fa-wrench"
                         color="blue"
                     />
                     <StatsCard
                         title="OK Status"
                         value={stats?. ok || 0}
-                        icon="✓"
+                        icon="fa-check-circle"
                         color="green"
                         subtitle="PPM up to date"
                     />
                     <StatsCard
                         title="Warning"
                         value={stats?. warning || 0}
-                        icon="⚠"
+                        icon="fa-exclamation-triangle"
                         color="orange"
                         subtitle="Plan PPM soon"
                     />
                     <StatsCard
                         title="Critical"
                         value={stats?.critical || 0}
-                        icon="✕"
+                        icon="fa-times-circle"
                         color="red"
                         subtitle="Need PPM now!"
                     />
@@ -66,7 +66,8 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                     <div className="lg:col-span-1">
                         <DoughnutChart
                             data={chartData?. statusDistribution}
-                            title="🎯 Dies Status Distribution"
+                            title="Dies Status Distribution"
+                            icon="fa-bullseye"
                         />
                     </div>
 
@@ -74,7 +75,8 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                     <div className="lg:col-span-2">
                         <BarChart
                             data={chartData?.diesByTonnage}
-                            title="🏭 Dies Status by Tonnage"
+                            title="Dies Status by Tonnage"
+                            icon="fa-industry"
                             stacked={true}
                         />
                     </div>
@@ -85,14 +87,16 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                     {/* Production Trend - Line Chart */}
                     <LineChart
                         data={chartData?.productionTrend}
-                        title="📈 Production Trend (Last 30 Days)"
+                        title="Production Trend (Last 30 Days)"
+                        icon="fa-chart-line"
                         fill={true}
                     />
 
                     {/* Top Dies by Stroke - Horizontal Bar */}
                     <HorizontalBarChart
                         data={chartData?.topDiesByStroke}
-                        title="🔝 Top 10 Dies by Stroke Progress"
+                        title="Top 10 Dies by Stroke Progress"
+                        icon="fa-sort-amount-up"
                     />
                 </div>
 
@@ -102,7 +106,8 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                     <div className="lg:col-span-2">
                         <LineChart
                             data={chartData?.monthlyPpmCount}
-                            title={`📅 PPM Completed per Month (${new Date().getFullYear()})`}
+                            title={`PPM Completed per Month (${new Date().getFullYear()})`}
+                            icon="fa-calendar-check"
                             fill={false}
                         />
                     </div>
@@ -110,7 +115,7 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                     {/* Overall Health Gauge */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 text-center">
-                            💚 Overall PPM Health
+                            <i className="fas fa-heartbeat text-green-500 mr-2"></i> Overall PPM Health
                         </h3>
                         <div className="flex justify-center">
                             <GaugeChart
@@ -142,7 +147,7 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                     <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                         <div className="bg-red-600 text-white px-6 py-3">
                             <h3 className="text-lg font-semibold flex items-center gap-2">
-                                <span>🚨</span> Critical Alert - Needs Immediate PPM
+                                <i className="fas fa-exclamation-circle"></i> Critical Alert - Needs Immediate PPM
                             </h3>
                         </div>
                         <div className="p-4">

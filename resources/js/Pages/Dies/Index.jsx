@@ -9,6 +9,9 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
     const [customerId, setCustomerId] = useState(filters?.customer_id || '');
     const [modelId, setModelId] = useState(filters?.machine_model_id || '');
 
+    // Check if user can edit dies (admin or mtn_dies only)
+    const canEditDies = ['admin', 'mtn_dies'].includes(auth.user.role);
+
     const handleFilter = () => {
         router.get(route('dies.index'), {
             search:  search || undefined,
@@ -47,12 +50,14 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                             Manage and monitor all dies preventive maintenance
                         </p>
                     </div>
-                    <Link
-                        href={route('dies.create')}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-                    >
-                        <span>+</span> Add Die
-                    </Link>
+                    {canEditDies && (
+                        <Link
+                            href={route('dies.create')}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                        >
+                            <i className="fas fa-plus"></i> Add Die
+                        </Link>
+                    )}
                 </div>
 
                 {/* Filters */}
@@ -106,9 +111,9 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                         <div className="flex gap-2">
                             <button
                                 onClick={handleFilter}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                             >
-                                🔍 Filter
+                                <i className="fas fa-search"></i> Filter
                             </button>
                             <button
                                 onClick={clearFilters}
@@ -140,6 +145,9 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Lot Progress
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        PPM Condition
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Status
@@ -192,6 +200,72 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                     standardStroke={die.standard_stroke || 0}
                                                 />
                                             </td>
+                                            <td className="px-4 py-4 min-w-[200px]">
+                                                <div className="space-y-1.5">
+                                                    {/* Condition 1: Standard Stroke */}
+                                                    <div className={`flex items-center gap-2 text-xs ${
+                                                        die.ppm_conditions_info?.condition_1?.is_active
+                                                            ? 'text-blue-700 dark:text-blue-400 font-semibold'
+                                                            : 'text-gray-500 dark:text-gray-400'
+                                                    }`}>
+                                                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                                            die.ppm_conditions_info?.condition_1?.is_active
+                                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                                                                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                                                        }`}>1</span>
+                                                        <div className="flex-1">
+                                                            <div className="flex justify-between">
+                                                                <span>Std Stroke</span>
+                                                                <span>{die.ppm_conditions_info?.condition_1?.target?.toLocaleString()}</span>
+                                                            </div>
+                                                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-0.5">
+                                                                <div
+                                                                    className={`h-1 rounded-full ${
+                                                                        die.ppm_conditions_info?.condition_1?.percentage >= 100 ? 'bg-red-500' :
+                                                                        die.ppm_conditions_info?.condition_1?.percentage >= 75 ? 'bg-orange-500' : 'bg-blue-500'
+                                                                    }`}
+                                                                    style={{ width: `${Math.min(die.ppm_conditions_info?.condition_1?.percentage || 0, 100)}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Condition 2: 4-Lot Checkpoint */}
+                                                    <div className={`flex items-center gap-2 text-xs ${
+                                                        die.ppm_conditions_info?.condition_2?.is_active
+                                                            ? 'text-purple-700 dark:text-purple-400 font-semibold'
+                                                            : 'text-gray-500 dark:text-gray-400'
+                                                    }`}>
+                                                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                                            die.ppm_conditions_info?.condition_2?.is_active
+                                                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+                                                                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                                                        }`}>2</span>
+                                                        <div className="flex-1">
+                                                            <div className="flex justify-between">
+                                                                <span>PPM #{(die.ppm_count || 0) + 1}</span>
+                                                                <span>{die.ppm_conditions_info?.condition_2?.target?.toLocaleString()}</span>
+                                                            </div>
+                                                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-0.5">
+                                                                <div
+                                                                    className={`h-1 rounded-full ${
+                                                                        die.ppm_conditions_info?.condition_2?.percentage >= 100 ? 'bg-red-500' :
+                                                                        die.ppm_conditions_info?.condition_2?.percentage >= 75 ? 'bg-orange-500' : 'bg-purple-500'
+                                                                    }`}
+                                                                    style={{ width: `${Math.min(die.ppm_conditions_info?.condition_2?.percentage || 0, 100)}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Active Trigger Indicator */}
+                                                    {die.ppm_trigger_condition?.type === 'both' && (
+                                                        <div className="text-[10px] text-center text-orange-600 dark:text-orange-400 font-medium">
+                                                            ⚡ Final PPM (Both conditions)
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-4 whitespace-nowrap">
                                                 <StatusBadge
                                                     status={die.ppm_status}
@@ -202,33 +276,41 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                 {die.last_ppm_date || '-'}
                                             </td>
                                             <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <Link
-                                                    href={route('dies.show', { die: die.id })}
-                                                    className="text-blue-600 hover:text-blue-800 mr-3"
-                                                >
-                                                    View
-                                                </Link>
-                                                <Link
-                                                    href={route('dies.edit', { die: die.id })}
-                                                    className="text-indigo-600 hover:text-indigo-800"
-                                                >
-                                                    Edit
-                                                </Link>
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <Link
+                                                        href={route('dies.show', { die: die.id })}
+                                                        className="text-blue-600 hover:text-blue-800"
+                                                        title="View Details"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </Link>
+                                                    {canEditDies && (
+                                                        <Link
+                                                            href={route('dies.edit', { die: die.id })}
+                                                            className="text-yellow-600 hover:text-yellow-800"
+                                                            title="Edit"
+                                                        >
+                                                            <i className="fas fa-edit"></i>
+                                                        </Link>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="8" className="px-4 py-12 text-center">
+                                        <td colSpan="9" className="px-4 py-12 text-center">
                                             <div className="flex flex-col items-center">
-                                                <span className="text-4xl mb-2">📦</span>
+                                                <i className="fas fa-box-open text-4xl text-gray-400 mb-2"></i>
                                                 <p className="text-gray-500 dark:text-gray-400">No dies found</p>
-                                                <Link
-                                                    href={route('dies.create')}
-                                                    className="mt-2 text-blue-600 hover:text-blue-800"
-                                                >
-                                                    Add your first die →
-                                                </Link>
+                                                {canEditDies && (
+                                                    <Link
+                                                        href={route('dies.create')}
+                                                        className="mt-2 text-blue-600 hover:text-blue-800"
+                                                    >
+                                                        Add your first die →
+                                                    </Link>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

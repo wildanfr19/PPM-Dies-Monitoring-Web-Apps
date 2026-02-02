@@ -7,6 +7,7 @@ use App\Exports\DiesTemplateExport;
 use App\Exports\PpmScheduleTemplateExport;
 use App\Imports\ProductionLogImport;
 use App\Imports\DiesImport;
+use App\Imports\PpmScheduleImport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
@@ -111,6 +112,43 @@ class ImportController extends Controller
             $skipped = $import->getSkippedRows();
 
             $message = "Successfully imported {$imported} new dies, updated {$updated} existing dies.";
+
+            if (count($skipped) > 0) {
+                $message .= " " . count($skipped) . " rows were skipped.";
+            }
+
+            return redirect()->route('import.index')->with('success', $message)->with('importDetails', [
+                'imported' => $imported,
+                'updated' => $updated,
+                'skipped' => $skipped,
+            ]);
+
+        } catch (\Exception $e) {
+            return redirect()->route('import.index')
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Import PPM Schedule
+     */
+    public function importPpmSchedule(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'year' => 'nullable|integer|min:2020|max:2030',
+        ]);
+
+        try {
+            $year = $request->get('year', date('Y'));
+            $import = new PpmScheduleImport($year);
+            Excel::import($import, $request->file('file'));
+
+            $imported = $import->getImportedCount();
+            $updated = $import->getUpdatedCount();
+            $skipped = $import->getSkippedRows();
+
+            $message = "Successfully imported {$imported} new PPM schedules, updated {$updated} existing schedules.";
 
             if (count($skipped) > 0) {
                 $message .= " " . count($skipped) . " rows were skipped.";

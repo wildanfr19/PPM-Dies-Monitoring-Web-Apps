@@ -7,6 +7,9 @@ import LotProgress from '@/Components/PPM/LotProgress';
 export default function DieShow({ auth, die }) {
     const [showPpmModal, setShowPpmModal] = useState(false);
 
+    // Check if user can edit dies (admin or mtn_dies only)
+    const canEditDies = ['admin', 'mtn_dies'].includes(auth.user.role);
+
     const { data, setData, post, processing, errors, reset } = useForm({
         ppm_date: new Date().toISOString().split('T')[0],
         pic:  '',
@@ -66,18 +69,22 @@ export default function DieShow({ auth, die }) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Link
-                            href={route('dies.edit', { die: die.id })}
-                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition dark:bg-gray-700 dark:text-gray-300"
-                        >
-                            ✏️ Edit
-                        </Link>
-                        <button
-                            onClick={() => setShowPpmModal(true)}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                        >
-                            📝 Record PPM
-                        </button>
+                        {canEditDies && (
+                            <>
+                                <Link
+                                    href={route('dies.edit', { die: die.id })}
+                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition dark:bg-gray-700 dark:text-gray-300"
+                                >
+                                    ✏️ Edit
+                                </Link>
+                                <button
+                                    onClick={() => setShowPpmModal(true)}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                                >
+                                    📝 Record PPM
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -187,6 +194,189 @@ export default function DieShow({ auth, die }) {
                                     <p className="text-xs text-gray-500 dark:text-gray-400">Current Lot</p>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* PPM Conditions Card */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                🎯 PPM Trigger Conditions
+                            </h3>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Condition 1: Standard Stroke */}
+                                <div className={`rounded-lg p-4 border-2 ${
+                                    die.ppm_conditions_info?.condition_1?.is_active
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50'
+                                }`}>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                            die.ppm_conditions_info?.condition_1?.is_active
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-300 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
+                                        }`}>1</span>
+                                        <div>
+                                            <h4 className={`font-semibold ${
+                                                die.ppm_conditions_info?.condition_1?.is_active
+                                                    ? 'text-blue-700 dark:text-blue-300'
+                                                    : 'text-gray-600 dark:text-gray-400'
+                                            }`}>Standard Stroke</h4>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                PPM when reaching standard stroke limit
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600 dark:text-gray-400">Target</span>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                                {die.ppm_conditions_info?.condition_1?.target?.toLocaleString()} strokes
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600 dark:text-gray-400">Current</span>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                                {die.accumulation_stroke?.toLocaleString()} strokes
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600 dark:text-gray-400">Remaining</span>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                                {die.ppm_conditions_info?.condition_1?.remaining?.toLocaleString()} strokes
+                                            </span>
+                                        </div>
+
+                                        {/* Progress Bar */}
+                                        <div className="mt-2">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span>Progress</span>
+                                                <span className={`font-semibold ${
+                                                    die.ppm_conditions_info?.condition_1?.percentage >= 100 ? 'text-red-600' :
+                                                    die.ppm_conditions_info?.condition_1?.percentage >= 75 ? 'text-orange-600' : 'text-blue-600'
+                                                }`}>{die.ppm_conditions_info?.condition_1?.percentage}%</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                                <div
+                                                    className={`h-2 rounded-full transition-all ${
+                                                        die.ppm_conditions_info?.condition_1?.percentage >= 100 ? 'bg-red-500' :
+                                                        die.ppm_conditions_info?.condition_1?.percentage >= 75 ? 'bg-orange-500' : 'bg-blue-500'
+                                                    }`}
+                                                    style={{ width: `${Math.min(die.ppm_conditions_info?.condition_1?.percentage || 0, 100)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {die.ppm_conditions_info?.condition_1?.is_active && (
+                                        <div className="mt-3 text-xs text-center text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/30 rounded py-1">
+                                            ⚡ Active - This is the final PPM checkpoint
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Condition 2: 4-Lot Checkpoint */}
+                                <div className={`rounded-lg p-4 border-2 ${
+                                    die.ppm_conditions_info?.condition_2?.is_active
+                                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50'
+                                }`}>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                            die.ppm_conditions_info?.condition_2?.is_active
+                                                ? 'bg-purple-500 text-white'
+                                                : 'bg-gray-300 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
+                                        }`}>2</span>
+                                        <div>
+                                            <h4 className={`font-semibold ${
+                                                die.ppm_conditions_info?.condition_2?.is_active
+                                                    ? 'text-purple-700 dark:text-purple-300'
+                                                    : 'text-gray-600 dark:text-gray-400'
+                                            }`}>4-Lot Checkpoint</h4>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                PPM every 4 lots of production
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600 dark:text-gray-400">Next PPM</span>
+                                            <span className="font-semibold text-purple-700 dark:text-purple-300">
+                                                PPM #{(die.ppm_count || 0) + 1} of {die.total_ppm_checkpoints}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600 dark:text-gray-400">Target</span>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                                {die.ppm_conditions_info?.condition_2?.target?.toLocaleString()} strokes
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600 dark:text-gray-400">Last PPM at</span>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                                {(die.stroke_at_last_ppm || 0).toLocaleString()} strokes
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600 dark:text-gray-400">Remaining</span>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                                {die.ppm_conditions_info?.condition_2?.remaining?.toLocaleString()} strokes
+                                            </span>
+                                        </div>
+
+                                        {/* Progress Bar */}
+                                        <div className="mt-2">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span>Progress to PPM #{(die.ppm_count || 0) + 1}</span>
+                                                <span className={`font-semibold ${
+                                                    die.ppm_conditions_info?.condition_2?.percentage >= 100 ? 'text-red-600' :
+                                                    die.ppm_conditions_info?.condition_2?.percentage >= 75 ? 'text-orange-600' : 'text-purple-600'
+                                                }`}>{die.ppm_conditions_info?.condition_2?.percentage}%</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                                <div
+                                                    className={`h-2 rounded-full transition-all ${
+                                                        die.ppm_conditions_info?.condition_2?.percentage >= 100 ? 'bg-red-500' :
+                                                        die.ppm_conditions_info?.condition_2?.percentage >= 75 ? 'bg-orange-500' : 'bg-purple-500'
+                                                    }`}
+                                                    style={{ width: `${Math.min(die.ppm_conditions_info?.condition_2?.percentage || 0, 100)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {die.ppm_conditions_info?.condition_2?.is_active && (
+                                        <div className="mt-3 text-xs text-center text-purple-600 dark:text-purple-400 font-medium bg-purple-100 dark:bg-purple-900/30 rounded py-1">
+                                            ⚡ Active - Next trigger condition
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Both Conditions Info */}
+                            {die.ppm_trigger_condition?.type === 'both' && (
+                                <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg text-center">
+                                    <p className="text-orange-700 dark:text-orange-300 font-semibold">
+                                        ⚡ Final PPM - Both Conditions Meet
+                                    </p>
+                                    <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                        This is the last PPM checkpoint before die overhaul/replacement
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* PPM Completed Info */}
+                            {die.ppm_count > 0 && (
+                                <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                    <p className="text-green-700 dark:text-green-300 font-semibold text-sm">
+                                        ✅ PPM Completed: {die.ppm_count} of {die.total_ppm_checkpoints}
+                                    </p>
+                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                        Last PPM recorded at {(die.stroke_at_last_ppm || 0).toLocaleString()} strokes
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* PPM History */}

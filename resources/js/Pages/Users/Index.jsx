@@ -1,6 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { confirmDelete, showError } from '@/Utils/swal';
 
 export default function UsersIndex({ auth, users, roles, filters }) {
     const [search, setSearch] = useState(filters?.search || '');
@@ -28,12 +29,13 @@ export default function UsersIndex({ auth, users, roles, filters }) {
         });
     };
 
-    const handleDelete = (user) => {
+    const handleDelete = async (user) => {
         if (user.id === auth.user.id) {
-            alert('You cannot delete your own account.');
+            showError('You cannot delete your own account.');
             return;
         }
-        if (confirm(`Are you sure you want to delete "${user.name}"?`)) {
+        const confirmed = await confirmDelete(`user "${user.name}"`);
+        if (confirmed) {
             router.delete(route('users.destroy', user.id));
         }
     };
@@ -75,7 +77,7 @@ export default function UsersIndex({ auth, users, roles, filters }) {
                         href={route('users.create')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                     >
-                        <span>+</span> Add User
+                        <i className="fas fa-plus"></i> Add User
                     </Link>
                 </div>
 
@@ -111,9 +113,9 @@ export default function UsersIndex({ auth, users, roles, filters }) {
                         </div>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                         >
-                            🔍 Search
+                            <i className="fas fa-search"></i> Search
                         </button>
                         {(filters?.search || filters?.role) && (
                             <Link
@@ -203,21 +205,25 @@ export default function UsersIndex({ auth, users, roles, filters }) {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                                <Link
-                                                    href={route('users.edit', user.id)}
-                                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                                >
-                                                    Edit
-                                                </Link>
-                                                {user.id !== auth.user.id && (
-                                                    <button
-                                                        onClick={() => handleDelete(user)}
-                                                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <Link
+                                                        href={route('users.edit', user.id)}
+                                                        className="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
+                                                        title="Edit"
                                                     >
-                                                        Delete
-                                                    </button>
-                                                )}
+                                                        <i className="fas fa-edit"></i>
+                                                    </Link>
+                                                    {user.id !== auth.user.id && (
+                                                        <button
+                                                            onClick={() => handleDelete(user)}
+                                                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                                            title="Delete"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))

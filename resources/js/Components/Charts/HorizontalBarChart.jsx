@@ -11,7 +11,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function HorizontalBarChart({ data, title, showLegend = true }) {
+export default function HorizontalBarChart({ data, title, icon, showLegend = true }) {
     const chartData = {
         labels: data?.labels || [],
         datasets: data?.datasets || [
@@ -74,7 +74,13 @@ export default function HorizontalBarChart({ data, title, showLegend = true }) {
                     color: 'rgba(0, 0, 0, 0.05)',
                 },
                 ticks: {
-                    stepSize: 1,
+                    // Dynamic stepSize to prevent too many ticks
+                    callback: function(value) {
+                        if (Number.isInteger(value)) {
+                            return value.toLocaleString();
+                        }
+                        return null;
+                    },
                 },
             },
             y: {
@@ -86,8 +92,14 @@ export default function HorizontalBarChart({ data, title, showLegend = true }) {
     };
 
     return (
-        <div className="w-full h-full min-h-[200px]">
-            <Bar data={chartData} options={options} />
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                {icon && <i className={`fas ${icon} mr-2 text-blue-500`}></i>}
+                {title || 'Top Dies by Stroke'}
+            </h3>
+            <div className="h-72">
+                <Bar data={chartData} options={options} />
+            </div>
         </div>
     );
 }

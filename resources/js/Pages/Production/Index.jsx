@@ -1,9 +1,10 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { confirmDelete, showSuccess } from '@/Utils/swal';
 
 export default function ProductionIndex({ auth, logs, filters, dies }) {
-    const [dateFrom, setDateFrom] = useState(filters?. date_from || '');
+    const [dateFrom, setDateFrom] = useState(filters?.date_from || '');
     const [dateTo, setDateTo] = useState(filters?.date_to || '');
     const [dieId, setDieId] = useState(filters?.die_id || '');
 
@@ -22,6 +23,13 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
         setDateTo('');
         setDieId('');
         router.get(route('production.index'));
+    };
+
+    const handleDelete = async (id, partNumber) => {
+        const confirmed = await confirmDelete(`production log for ${partNumber}`);
+        if (confirmed) {
+            router.delete(route('production.destroy', id));
+        }
     };
 
     return (
@@ -47,7 +55,7 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                             href={route('production.create')}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                         >
-                            <span>+</span> Add Production Log
+                            <i className="fas fa-plus"></i> Add Production Log
                         </Link>
                     </div>
                 </div>
@@ -121,10 +129,13 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Shift</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Part Number</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Part Name</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark: text-gray-300 uppercase">Line</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Model</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Line</th>
+                                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Qty Die</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Process</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Time</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Output (Stroke)</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Output</th>
+                                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -150,16 +161,24 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-[200px] truncate">
                                                 {log.die?.part_name}
                                             </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                {log.model || '-'}
+                                            </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                                 {log.line || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-center text-sm text-gray-600 dark:text-gray-400">
+                                                {log.die?.qty_die || 1}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                                     log.running_process === 'Auto'
                                                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                        : log.running_process === 'Blanking'
+                                                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
                                                         : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                                                 }`}>
-                                                    {log. running_process}
+                                                    {log.running_process}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
@@ -173,11 +192,36 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                                                     {log.output_qty?. toLocaleString()}
                                                 </span>
                                             </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <Link
+                                                        href={route('production.show', log.id)}
+                                                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                                        title="View"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </Link>
+                                                    <Link
+                                                        href={route('production.edit', log.id)}
+                                                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
+                                                        title="Edit"
+                                                    >
+                                                        <i className="fas fa-edit"></i>
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(log.id, log.die?.part_number)}
+                                                        className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                                        title="Delete"
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="8" className="px-4 py-12 text-center">
+                                        <td colSpan="11" className="px-4 py-12 text-center">
                                             <div className="flex flex-col items-center">
                                                 <span className="text-4xl mb-2">📦</span>
                                                 <p className="text-gray-500 dark:text-gray-400">No production logs found</p>

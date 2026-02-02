@@ -43,14 +43,21 @@ class DieController extends Controller
                 'standard_stroke' => $die->standard_stroke,
                 'remaining_strokes' => $die->remaining_strokes,
                 'stroke_percentage' => $die->stroke_percentage,
-                'lot_size' => $die->lot_size,
+                'lot_size' => $die->lot_size_value,
                 'current_lot' => $die->current_lot,
                 'total_lots' => $die->total_lots,
                 'remaining_lots' => $die->remaining_lots,
                 'lot_progress' => $die->lot_progress,
                 'ppm_status' => $die->ppm_status,
                 'ppm_status_label' => $die->ppm_status_label,
+                'ppm_alert_status' => $die->ppm_alert_status,
+                'ppm_alert_status_label' => $die->ppm_alert_status_label,
                 'last_ppm_date' => $die->last_ppm_date?->format('d-M-Y'),
+                // PPM Conditions Info
+                'ppm_trigger_condition' => $die->ppm_trigger_condition,
+                'ppm_conditions_info' => $die->ppm_conditions_info,
+                'next_ppm_stroke' => $die->next_ppm_stroke,
+                'ppm_count' => $die->ppm_count ?? 0,
             ];
         });
 
@@ -84,7 +91,7 @@ class DieController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
+        // dd($request->all());
         $validated = $request->validate([
             'part_number' => 'required|string|max:50',
             'part_name' => 'required|string|max:200',
@@ -129,18 +136,27 @@ class DieController extends Controller
                 'standard_stroke' => $die->standard_stroke,
                 'remaining_strokes' => $die->remaining_strokes,
                 'stroke_percentage' => $die->stroke_percentage,
-                'lot_size' => $die->lot_size,
+                'lot_size' => $die->lot_size_value,
                 'current_lot' => $die->current_lot,
                 'total_lots' => $die->total_lots,
                 'remaining_lots' => $die->remaining_lots,
                 'lot_progress' => $die->lot_progress,
                 'ppm_status' => $die->ppm_status,
                 'ppm_status_label' => $die->ppm_status_label,
+                'ppm_alert_status' => $die->ppm_alert_status,
+                'ppm_alert_status_label' => $die->ppm_alert_status_label,
                 'last_ppm_date' => $die->last_ppm_date?->format('d-M-Y'),
                 'location' => $die->location,
                 'notes' => $die->notes,
                 'productionLogs' => $die->productionLogs,
                 'ppmHistories' => $die->ppmHistories,
+                // PPM Conditions Info
+                'ppm_trigger_condition' => $die->ppm_trigger_condition,
+                'ppm_conditions_info' => $die->ppm_conditions_info,
+                'next_ppm_stroke' => $die->next_ppm_stroke,
+                'ppm_count' => $die->ppm_count ?? 0,
+                'stroke_at_last_ppm' => $die->stroke_at_last_ppm ?? 0,
+                'total_ppm_checkpoints' => $die->total_ppm_checkpoints,
             ],
         ]);
     }
@@ -150,7 +166,7 @@ class DieController extends Controller
      */
     public function edit(DieModel $die)
     {
-        dd($die);
+        // dd($die);
         return Inertia::render('Dies/Edit', [
             'die' => $die,
             'customers' => Customer::active()->get(['id', 'code', 'name']),
@@ -205,6 +221,100 @@ class DieController extends Controller
         $this->monitoringService->recordPpm($die, $validated);
 
         return redirect()->back()
-            ->with('success', 'PPM recorded successfully.  Stroke counter has been reset.');
+            ->with('success', 'PPM recorded successfully. Stroke counter has been reset.');
+    }
+
+    /**
+     * Schedule PPM for the specified die (after Red Alert)
+     * Flow: Red Alert -> MTN Dies schedules PPM
+     */
+    public function schedulePpm(Request $request, DieModel $die)
+    {
+        $validated = $request->validate([
+            'scheduled_date' => 'nullable|date',
+            'plan_week' => 'nullable|string|max:20',
+            'pic' => 'nullable|string|max:100',
+            'notes' => 'nullable|string',
+        ]);
+
+        $this->monitoringService->schedulePpm($die, $validated);
+
+        return redirect()->back()
+            ->with('success', 'PPM has been scheduled successfully.');
+    }
+
+    /**
+     * Start PPM Processing for the specified die
+     * Flow: MTN Dies starts PPM Processing
+     */
+    public function startPpmProcessing(DieModel $die)
+    {
+        $this->monitoringService->startPpmProcessing($die);
+
+        return redirect()->back()
+            ->with('success', 'PPM Processing has been started.');
+    }
+
+    /**
+     * Remove the specified die from storage.
+     */
+    public function destroy(DieModel $die)
+    {
+        // Check if die has production logs or PPM history
+        if ($die->productionLogs()->exists() || $die->ppmHistories()->exists()) {
+            // Soft delete - just mark as inactive
+            $die->update(['status' => 'inactive']);
+            return redirect()->route('dies.index')
+                ->with('success', 'Die has been deactivated.');
+        }
+
+        $die->delete();
+        return redirect()->route('dies.index')
+            ->with('success', 'Die deleted successfully.');
+    }
+
+    /**
+     * Show Test Alert page
+     */
+    public function showTestAlert()
+    {
+        return Inertia::render('TestAlert', [
+            'dies' => DieModel::with('customer:id,code')
+                ->active()
+                ->get(['id', 'part_number', 'part_name', 'customer_id', 'accumulation_stroke']),
+            'mailConfig' => [
+                'driver' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'from' => config('mail.from.address'),
+            ],
+        ]);
+    }
+
+    /**
+     * Send test alert email
+     */
+    public function sendTestAlert(Request $request)
+    {
+        $validated = $request->validate([
+            'die_id' => 'required|exists:dies,id',
+            'alert_type' => 'required|in:orange,red',
+            'email' => 'required|email',
+        ]);
+
+        $die = DieModel::with(['customer', 'machineModel'])->findOrFail($validated['die_id']);
+
+        try {
+            $notification = new \App\Notifications\CriticalDieAlert($die, $validated['alert_type']);
+
+            // Use on-demand notification
+            \Illuminate\Support\Facades\Notification::route('mail', $validated['email'])
+                ->notify($notification);
+
+            return redirect()->back()
+                ->with('success', "Test {$validated['alert_type']} alert sent to {$validated['email']}");
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to send email: ' . $e->getMessage());
+        }
     }
 }

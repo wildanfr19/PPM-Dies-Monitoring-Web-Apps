@@ -16,8 +16,10 @@ class CheckPpmAlerts extends Command
 
         $result = $alertService->checkAndSendAlerts();
 
-        $this->info("Critical dies found: {$result['critical_count']}");
-        $this->info("Alerts sent: {$result['alerts_sent']}");
+        $this->info("Orange dies found: {$result['orange_count']}");
+        $this->info("Red dies found: {$result['red_count']}");
+        $this->info("Orange alerts sent: {$result['orange_alerts_sent']}");
+        $this->info("Red alerts sent: {$result['red_alerts_sent']}");
 
         return Command::SUCCESS;
     }

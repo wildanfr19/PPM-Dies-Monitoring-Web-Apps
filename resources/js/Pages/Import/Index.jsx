@@ -14,6 +14,11 @@ export default function ImportIndex({ auth }) {
         file: null,
     });
 
+    const ppmScheduleForm = useForm({
+        file: null,
+        year: new Date().getFullYear(),
+    });
+
     const handleProductionSubmit = (e) => {
         e.preventDefault();
         productionForm.post(route('import.production'), {
@@ -27,7 +32,15 @@ export default function ImportIndex({ auth }) {
             forceFormData: true,
         });
     };
-        // Sample data untuk preview
+
+    const handlePpmScheduleSubmit = (e) => {
+        e.preventDefault();
+        ppmScheduleForm.post(route('import.ppm-schedule'), {
+            forceFormData: true,
+        });
+    };
+
+    // Sample data untuk preview
     const sampleDies = [
         {
             no: 1,
@@ -70,13 +83,13 @@ export default function ImportIndex({ auth }) {
                     {/* Flash Messages */}
                     {flash?. success && (
                         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative flex items-center gap-2">
-                            <span className="text-xl">✅</span>
+                            <i className="fas fa-check-circle text-xl"></i>
                             <span className="block sm:inline">{flash.success}</span>
                         </div>
                     )}
                     {flash?.error && (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center gap-2">
-                            <span className="text-xl">❌</span>
+                            <i className="fas fa-times-circle text-xl"></i>
                             <span className="block sm:inline">{flash.error}</span>
                         </div>
                     )}
@@ -87,33 +100,33 @@ export default function ImportIndex({ auth }) {
                             <nav className="flex -mb-px">
                                 <button
                                     onClick={() => setActiveTab('production')}
-                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
+                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
                                         activeTab === 'production'
                                             ?  'border-blue-500 text-blue-600'
                                             : 'border-transparent text-gray-500 hover: text-gray-700 hover: border-gray-300'
                                     }`}
                                 >
-                                    ⚙️ Production Log (Act_Prod)
+                                    <i className="fas fa-cogs"></i> Production Log (Act_Prod)
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('dies')}
-                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
+                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
                                         activeTab === 'dies'
                                             ?  'border-blue-500 text-blue-600'
                                             : 'border-transparent text-gray-500 hover: text-gray-700 hover: border-gray-300'
                                     }`}
                                 >
-                                    🔧 Dies Master
+                                    <i className="fas fa-wrench"></i> Dies Master
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('schedule')}
-                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition ${
+                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
                                         activeTab === 'schedule'
                                             ? 'border-blue-500 text-blue-600'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
                                 >
-                                    📅 PPM Schedule Template
+                                    <i className="fas fa-calendar-alt"></i> PPM Schedule Template
                                 </button>
                             </nav>
                         </div>
@@ -124,8 +137,8 @@ export default function ImportIndex({ auth }) {
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                                📤 Import Production Log (Act_Prod)
+                                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                                <i className="fas fa-file-upload text-blue-500"></i> Import Production Log (Act_Prod)
                                             </h3>
                                             <p className="text-sm text-gray-500 mt-1">
                                                 Import daily production data from Excel file.  Output will be added to die's stroke count.
@@ -135,14 +148,14 @@ export default function ImportIndex({ auth }) {
                                             href={route('import.template.production')}
                                             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 whitespace-nowrap"
                                         >
-                                            📥 Download Template
+                                            <i className="fas fa-download"></i> Download Template
                                         </a>
                                     </div>
 
                                     {/* Template Preview */}
                                     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 overflow-hidden">
-                                        <h4 className="font-medium text-gray-900 dark: text-gray-100 mb-3">
-                                            📋 Template Format Preview:
+                                        <h4 className="font-medium text-gray-900 dark: text-gray-100 mb-3 flex items-center gap-2">
+                                            <i className="fas fa-clipboard-list text-gray-600"></i> Template Format Preview:
                                         </h4>
                                         <div className="overflow-x-auto">
                                             <table className="text-xs min-w-full">
@@ -633,7 +646,7 @@ export default function ImportIndex({ auth }) {
 
 
                                     {/* Download Button */}
-                                    <div className="flex justify-center">
+                                    <div className="flex justify-center gap-4">
                                         <a
                                             href={route('import.template.ppm-schedule')}
                                             className="px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-3 text-lg font-medium shadow-lg"
@@ -641,6 +654,69 @@ export default function ImportIndex({ auth }) {
                                             <span className="text-2xl">📥</span>
                                             Download PPM Schedule Template
                                         </a>
+                                    </div>
+
+                                    {/* Import Form */}
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+                                        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
+                                            <i className="fas fa-file-upload text-blue-600"></i>
+                                            Import PPM Schedule
+                                        </h4>
+                                        <form onSubmit={handlePpmScheduleSubmit} className="space-y-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                        Select Year
+                                                    </label>
+                                                    <select
+                                                        value={ppmScheduleForm.data.year}
+                                                        onChange={(e) => ppmScheduleForm.setData('year', e.target.value)}
+                                                        className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                                    >
+                                                        {[2024, 2025, 2026, 2027, 2028].map((y) => (
+                                                            <option key={y} value={y}>{y}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                        Select Excel File
+                                                    </label>
+                                                    <input
+                                                        type="file"
+                                                        accept=".xlsx,.xls,.csv"
+                                                        onChange={(e) => ppmScheduleForm.setData('file', e.target.files[0])}
+                                                        className="w-full text-sm text-gray-500 dark:text-gray-400
+                                                            file:mr-4 file:py-2 file:px-4
+                                                            file:rounded-lg file:border-0
+                                                            file:text-sm file:font-semibold
+                                                            file:bg-blue-50 file:text-blue-700
+                                                            hover:file:bg-blue-100
+                                                            dark:file:bg-blue-900 dark:file:text-blue-300"
+                                                    />
+                                                    {ppmScheduleForm.errors.file && (
+                                                        <p className="text-red-500 text-sm mt-1">{ppmScheduleForm.errors.file}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={ppmScheduleForm.processing || !ppmScheduleForm.data.file}
+                                                className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {ppmScheduleForm.processing ? (
+                                                    <>
+                                                        <i className="fas fa-spinner fa-spin"></i>
+                                                        Importing...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <i className="fas fa-upload"></i>
+                                                        Import PPM Schedule
+                                                    </>
+                                                )}
+                                            </button>
+                                        </form>
                                     </div>
 
                                     {/* Legend */}

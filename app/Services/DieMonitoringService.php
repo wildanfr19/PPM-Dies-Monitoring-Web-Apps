@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Models\DieModel;
 use App\Models\ProductionLog;
 use App\Models\PpmHistory;
+use App\Models\User;
+use App\Notifications\PpmCompleted;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class DieMonitoringService
 {
@@ -151,35 +154,95 @@ class DieMonitoringService
     }
 
     /**
-     * Record PPM completion and reset stroke
+     * Record PPM completion and update tracking
+     * NEW LOGIC: Setiap 4 lot harus PPM
+     * - stroke_at_last_ppm = current accumulation (NOT reset to 0)
+     * - ppm_count incremented
+     * - accumulation_stroke CONTINUES (tidak reset)
      */
     public function recordPpm(DieModel $die, array $data): PpmHistory
     {
         return DB::transaction(function () use ($die, $data) {
+            $currentAccumulation = $die->accumulation_stroke;
+            $ppmCount = ($die->ppm_count ?? 0) + 1;
+
             $history = PpmHistory::create([
                 'die_id' => $die->id,
                 'ppm_date' => $data['ppm_date'],
-                'stroke_at_ppm' => $die->accumulation_stroke,
+                'stroke_at_ppm' => $currentAccumulation,
+                'ppm_number' => $ppmCount, // Track which PPM this is (1st, 2nd, 3rd, etc)
                 'pic' => $data['pic'],
                 'status' => 'done',
                 'maintenance_type' => $data['maintenance_type'] ?? 'routine',
                 'work_performed' => $data['work_performed'] ?? null,
                 'parts_replaced' => $data['parts_replaced'] ?? null,
-                'findings' => $data['findings'] ??  null,
+                'findings' => $data['findings'] ?? null,
                 'recommendations' => $data['recommendations'] ?? null,
                 'checked_by' => $data['checked_by'] ?? null,
                 'approved_by' => $data['approved_by'] ?? null,
                 'created_by' => auth()->id(),
             ]);
 
+            // Update tracking - accumulation continues, but PPM checkpoint updated
             $die->update([
-                'last_stroke' => 0,
-                'accumulation_stroke' => 0,
+                'ppm_count' => $ppmCount,
+                'stroke_at_last_ppm' => $currentAccumulation, // Mark where PPM was done
                 'last_ppm_date' => $data['ppm_date'],
+                'ppm_alert_status' => null, // Reset alert status karena PPM sudah selesai
             ]);
+
+            // Send PPM Completed notification to MD/GM
+            $this->sendPpmCompletedNotification($die, $history);
 
             return $history;
         });
+    }
+
+    /**
+     * Send notification when PPM is completed
+     */
+    protected function sendPpmCompletedNotification(DieModel $die, PpmHistory $history): void
+    {
+        // Load relations for notification
+        $die->load(['customer', 'machineModel']);
+        $history->load('die');
+
+        // Send to MD, GM, and Admin
+        $recipients = User::where('is_active', true)
+            ->whereIn('role', [User::ROLE_ADMIN, User::ROLE_MGR_GM, User::ROLE_MD])
+            ->get();
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new PpmCompleted($die, $history));
+        }
+    }
+
+    /**
+     * Mark die as PPM scheduled (by MTN Dies after receiving Red Alert)
+     */
+    public function schedulePpm(DieModel $die, array $data): void
+    {
+        $die->update(['ppm_alert_status' => 'ppm_scheduled']);
+
+        // Optionally create a PPM schedule record
+        if (!empty($data['scheduled_date'])) {
+            $die->ppmSchedules()->create([
+                'year' => Carbon::parse($data['scheduled_date'])->year,
+                'month' => Carbon::parse($data['scheduled_date'])->month,
+                'week' => Carbon::parse($data['scheduled_date'])->weekOfMonth,
+                'plan_week' => $data['plan_week'] ?? null,
+                'pic' => $data['pic'] ?? null,
+                'notes' => $data['notes'] ?? 'Scheduled after Red Alert',
+            ]);
+        }
+    }
+
+    /**
+     * Mark die as PPM in progress
+     */
+    public function startPpmProcessing(DieModel $die): void
+    {
+        $die->update(['ppm_alert_status' => 'ppm_in_progress']);
     }
 
     /**

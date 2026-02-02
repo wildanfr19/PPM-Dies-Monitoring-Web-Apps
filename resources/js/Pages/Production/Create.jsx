@@ -4,6 +4,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 export default function ProductionCreate({ auth, dies }) {
     const { data, setData, post, processing, errors } = useForm({
         die_id: '',
+        model: '',
         production_date: new Date().toISOString().split('T')[0],
         shift: '1',
         line: '',
@@ -13,8 +14,11 @@ export default function ProductionCreate({ auth, dies }) {
         total_hours: '',
         total_minutes: '',
         break_time: '',
-        output_qty:  '',
+        output_qty: '',
     });
+
+    // Get selected die info
+    const selectedDie = dies?.find(d => d.id === parseInt(data.die_id));
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -93,6 +97,21 @@ export default function ProductionCreate({ auth, dies }) {
                                 {errors.die_id && <p className="text-red-500 text-xs mt-1">{errors.die_id}</p>}
                             </div>
 
+                            {/* Model */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Model
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.model}
+                                    onChange={(e) => setData('model', e.target.value.toUpperCase())}
+                                    placeholder="e.g., YHA, KS, 2JX, Y4L"
+                                    className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                                />
+                                {errors.model && <p className="text-red-500 text-xs mt-1">{errors.model}</p>}
+                            </div>
+
                             {/* Date and Shift */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -126,18 +145,33 @@ export default function ProductionCreate({ auth, dies }) {
                                 </div>
                             </div>
 
-                            {/* Line and Process */}
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Line, Qty Die (from Die), and Process */}
+                            <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Line
                                     </label>
+                                    <select
+                                        value={data.line}
+                                        onChange={(e) => setData('line', e.target.value)}
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                                    >
+                                        <option value="">-- Select Line --</option>
+                                        <option value="250T">250T</option>
+                                        <option value="800T">800T</option>
+                                        <option value="1200T">1200T</option>
+                                        <option value="Progressive">Progressive</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Qty Die <span className="text-xs text-gray-400">(from Die)</span>
+                                    </label>
                                     <input
                                         type="text"
-                                        value={data.line}
-                                        onChange={(e) => setData('line', e.target. value)}
-                                        placeholder="e.g., 800T, 1200T"
-                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                                        value={selectedDie?.qty_die || '-'}
+                                        readOnly
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-100 dark:text-gray-500 shadow-sm bg-gray-50 cursor-not-allowed"
                                     />
                                 </div>
                                 <div>
@@ -151,6 +185,7 @@ export default function ProductionCreate({ auth, dies }) {
                                     >
                                         <option value="Auto">Auto</option>
                                         <option value="Manual">Manual</option>
+                                        <option value="Blanking">Blanking</option>
                                     </select>
                                 </div>
                             </div>

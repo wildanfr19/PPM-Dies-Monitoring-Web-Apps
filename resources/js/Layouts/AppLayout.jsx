@@ -1,34 +1,46 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
+import NotificationBell from '@/Components/NotificationBell';
+import useFlashMessages from '@/Hooks/useFlashMessages';
 
 export default function AppLayout({ user, header, children }) {
     const { url } = usePage();
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
+    // Handle flash messages with SweetAlert
+    useFlashMessages();
+
     // Role-based access control
     const isAdmin = user.role === 'admin';
     const isMtnDies = user.role === 'mtn_dies';
     const isProduction = user.role === 'production';
+    const isMd = user.role === 'md';
+    const isMgrGm = user.role === 'mgr_gm';
+    const isPe = user.role === 'pe';
 
     // Navigation items with role restrictions
     const allNavigation = [
-        { name: 'Dashboard', href: route('dashboard'), icon: '📊', current: url === '/dashboard', roles: ['admin', 'mtn_dies', 'production'] },
-        { name: 'Dies List', href: route('dies.index'), icon: '🔧', current: url.startsWith('/dies'), roles: ['admin', 'mtn_dies'] },
-        { name: 'Schedule Calendar', href: route('schedule.index'), icon: '📅', current: url.startsWith('/schedule'), roles: ['admin', 'mtn_dies'] },
-        { name: 'Production Log', href: route('production.index'), icon: '⚙️', current: url.startsWith('/production'), roles: ['admin', 'mtn_dies', 'production'] },
-        { name: 'Import / Export', href: route('import.index'), icon: '📤', current: url.startsWith('/import'), roles: ['admin', 'mtn_dies', 'production'] },
-        { name: 'Reports', href: route('reports.index'), icon: '📈', current: url.startsWith('/reports'), roles: ['admin', 'mtn_dies', 'production'] },
+        { name: 'Dashboard', href: route('dashboard'), icon: 'fa-chart-pie', current: url === '/dashboard', roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm'] },
+        { name: 'Dies List', href: route('dies.index'), icon: 'fa-wrench', current: url.startsWith('/dies'), roles: ['admin', 'mtn_dies', 'md', 'mgr_gm'] },
+        { name: 'Schedule Calendar', href: route('schedule.index'), icon: 'fa-calendar-alt', current: url.startsWith('/schedule'), roles: ['admin', 'mtn_dies'] },
+        { name: 'Production Log', href: route('production.index'), icon: 'fa-cogs', current: url.startsWith('/production'), roles: ['admin', 'mtn_dies', 'production', 'pe'] },
+        { name: 'Import / Export', href: route('import.index'), icon: 'fa-file-import', current: url.startsWith('/import'), roles: ['admin', 'mtn_dies', 'production'] },
+        { name: 'Reports', href: route('reports.index'), icon: 'fa-chart-line', current: url.startsWith('/reports'), roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm'] },
     ];
 
     // Filter navigation based on user role
     const navigation = allNavigation.filter(item => item.roles.includes(user.role));
 
-    // Master Data - Admin only
+    // Master Data - Admin only (Tonnage Standards also for mtn_dies)
     const masterNavigation = isAdmin ? [
-        { name: 'Customers', href: route('customers.index'), icon: '🏢', current: url.startsWith('/customers') },
-        { name: 'Machine Models', href: route('machine-models.index'), icon: '🛠️', current: url.startsWith('/machine-models') },
-        { name: 'Users', href: route('users.index'), icon: '👥', current: url.startsWith('/users') },
+        { name: 'Customers', href: route('customers.index'), icon: 'fa-building', current: url.startsWith('/customers') },
+        { name: 'Machine Models', href: route('machine-models.index'), icon: 'fa-industry', current: url.startsWith('/machine-models') },
+        { name: 'Tonnage Standards', href: route('tonnage-standards.index'), icon: 'fa-ruler-combined', current: url.startsWith('/tonnage-standards') },
+        { name: 'Users', href: route('users.index'), icon: 'fa-users', current: url.startsWith('/users') },
+        { name: 'Test Alert', href: route('test-alert.index'), icon: 'fa-bell', current: url.startsWith('/test-alert') },
+    ] : isMtnDies ? [
+        { name: 'Tonnage Standards', href: route('tonnage-standards.index'), icon: 'fa-ruler-combined', current: url.startsWith('/tonnage-standards') },
     ] : [];
 
     return (
@@ -66,7 +78,7 @@ export default function AppLayout({ user, header, children }) {
                             }`}
                             title={! sidebarOpen ? item.name : ''}
                         >
-                            <span className={sidebarOpen ? 'mr-3' : 'mx-auto text-xl'}>{item.icon}</span>
+                            <i className={`fas ${item.icon} ${sidebarOpen ? 'mr-3 w-5 text-center' : 'mx-auto text-lg'}`}></i>
                             {sidebarOpen && item.name}
                         </Link>
                     ))}
@@ -90,7 +102,7 @@ export default function AppLayout({ user, header, children }) {
                                     }`}
                                     title={!sidebarOpen ? item.name : ''}
                                 >
-                                    <span className={sidebarOpen ? 'mr-3' : 'mx-auto text-xl'}>{item.icon}</span>
+                                    <i className={`fas ${item.icon} ${sidebarOpen ? 'mr-3 w-5 text-center' : 'mx-auto text-lg'}`}></i>
                                     {sidebarOpen && item.name}
                                 </Link>
                             ))}
@@ -116,10 +128,8 @@ export default function AppLayout({ user, header, children }) {
                         {header}
                     </div>
                     <div className="flex items-center gap-4">
-                        {/* Notifications */}
-                        <button className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                            🔔
-                        </button>
+                        {/* Notifications Bell */}
+                        <NotificationBell />
 
                         {/* User Dropdown */}
                         <Dropdown>

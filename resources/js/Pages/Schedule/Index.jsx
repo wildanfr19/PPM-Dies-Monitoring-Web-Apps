@@ -1,6 +1,6 @@
+import React, { useState, useRef } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, router } from '@inertiajs/react';
-import { useState, useRef } from 'react';
 
 export default function ScheduleIndex({ auth, year, scheduleData, customers, tonnages, filters }) {
     const [selectedYear, setSelectedYear] = useState(year);
@@ -154,6 +154,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                     <th className="border border-green-500 px-2 py-2 text-center min-w-[50px]" rowSpan={2}>MODEL</th>
                                     <th className="border border-green-500 px-2 py-2 text-center min-w-[45px]" rowSpan={2}>TOTAL<br/>DIE</th>
                                     <th className="border border-green-500 px-2 py-2 text-center min-w-[100px]" rowSpan={2}>ACCUMULATION</th>
+                                    <th className="border border-green-500 px-2 py-2 text-center min-w-[140px]" rowSpan={2}>PPM<br/>CONDITION</th>
                                     <th className="border border-green-500 px-2 py-2 text-center min-w-[70px]" rowSpan={2}>LAST<br/>STROKE</th>
                                     <th className="border border-green-500 px-2 py-2 text-center min-w-[60px]" rowSpan={2}>PLAN</th>
                                     {months.map((month, idx) => (
@@ -177,17 +178,17 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                             <tbody>
                                 {scheduleData?. length > 0 ? (
                                     scheduleData.map((group, groupIndex) => (
-                                        <>
+                                        <React.Fragment key={`group-${groupIndex}`}>
                                             {/* Group Header */}
-                                            <tr key={`group-${groupIndex}`} className="bg-green-100">
-                                                <td colSpan={7 + 48} className="border px-3 py-2 font-semibold text-green-800 sticky left-0 bg-green-100 z-10">
+                                            <tr className="bg-green-100">
+                                                <td colSpan={8 + 48} className="border px-3 py-2 font-semibold text-green-800 sticky left-0 bg-green-100 z-10">
                                                     {group.customer} ({group.tonnage})
                                                 </td>
                                             </tr>
 
                                             {/* Dies in Group */}
                                             {group.dies?. map((die, dieIndex) => (
-                                                <>
+                                                <React.Fragment key={`die-${die.id}`}>
                                                     {/* Row 1: Part Number + Forecast */}
                                                     <tr key={`${die.id}-1`} className="border-t-2 border-gray-300 hover:bg-gray-50">
                                                         <td className="border px-2 py-1 text-center font-medium bg-gray-50 sticky left-0 z-10" rowSpan={6}>
@@ -206,6 +207,73 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                         </td>
                                                         <td className="border px-2 py-1 text-xs text-gray-600">
                                                             ACCUMULATION STROKE
+                                                        </td>
+                                                        {/* PPM Condition Column */}
+                                                        <td className="border px-1 py-1 bg-gray-50" rowSpan={6}>
+                                                            <div className="space-y-1">
+                                                                {/* Condition 1 */}
+                                                                <div className={`flex items-center gap-1 text-[10px] ${
+                                                                    die.ppm_conditions_info?.condition_1?.is_active
+                                                                        ? 'text-blue-700 font-semibold'
+                                                                        : 'text-gray-400'
+                                                                }`}>
+                                                                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                                                                        die.ppm_conditions_info?.condition_1?.is_active
+                                                                            ? 'bg-blue-500 text-white'
+                                                                            : 'bg-gray-200 text-gray-500'
+                                                                    }`}>1</span>
+                                                                    <div className="flex-1">
+                                                                        <div className="flex justify-between">
+                                                                            <span>Std</span>
+                                                                            <span>{die.ppm_conditions_info?.condition_1?.target?.toLocaleString()}</span>
+                                                                        </div>
+                                                                        <div className="w-full bg-gray-200 rounded-full h-1">
+                                                                            <div
+                                                                                className={`h-1 rounded-full ${
+                                                                                    die.ppm_conditions_info?.condition_1?.percentage >= 100 ? 'bg-red-500' :
+                                                                                    die.ppm_conditions_info?.condition_1?.percentage >= 75 ? 'bg-orange-500' : 'bg-blue-500'
+                                                                                }`}
+                                                                                style={{ width: `${Math.min(die.ppm_conditions_info?.condition_1?.percentage || 0, 100)}%` }}
+                                                                            ></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Condition 2 */}
+                                                                <div className={`flex items-center gap-1 text-[10px] ${
+                                                                    die.ppm_conditions_info?.condition_2?.is_active
+                                                                        ? 'text-purple-700 font-semibold'
+                                                                        : 'text-gray-400'
+                                                                }`}>
+                                                                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                                                                        die.ppm_conditions_info?.condition_2?.is_active
+                                                                            ? 'bg-purple-500 text-white'
+                                                                            : 'bg-gray-200 text-gray-500'
+                                                                    }`}>2</span>
+                                                                    <div className="flex-1">
+                                                                        <div className="flex justify-between">
+                                                                            <span>PPM#{(die.ppm_count || 0) + 1}</span>
+                                                                            <span>{die.ppm_conditions_info?.condition_2?.target?.toLocaleString()}</span>
+                                                                        </div>
+                                                                        <div className="w-full bg-gray-200 rounded-full h-1">
+                                                                            <div
+                                                                                className={`h-1 rounded-full ${
+                                                                                    die.ppm_conditions_info?.condition_2?.percentage >= 100 ? 'bg-red-500' :
+                                                                                    die.ppm_conditions_info?.condition_2?.percentage >= 75 ? 'bg-orange-500' : 'bg-purple-500'
+                                                                                }`}
+                                                                                style={{ width: `${Math.min(die.ppm_conditions_info?.condition_2?.percentage || 0, 100)}%` }}
+                                                                            ></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Both conditions indicator */}
+                                                                {die.ppm_trigger_condition?.type === 'both' && (
+                                                                    <div className="text-[8px] text-center text-orange-600 font-medium">
+                                                                        ⚡ Final
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="border px-2 py-1 text-center">
                                                             <span className={`px-1 py-0.5 rounded text-xs font-medium ${getStatusColor(die.ppm_status)}`}>
@@ -312,20 +380,20 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                             Pic
                                                         </td>
                                                         {months.map((_, monthIdx) => (
-                                                            weeks. map((_, weekIdx) => (
+                                                            weeks.map((_, weekIdx) => (
                                                                 <td key={`${die.id}-pic-${monthIdx}-${weekIdx}`} className="border px-1 py-1 text-center">
                                                                     {renderCell(die.monthly_data?.[monthIdx + 1]?.pic?.[weekIdx])}
                                                                 </td>
                                                             ))
                                                         ))}
                                                     </tr>
-                                                </>
+                                                </React.Fragment>
                                             ))}
-                                        </>
+                                        </React.Fragment>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={7 + 48} className="px-4 py-12 text-center text-gray-500">
+                                        <td colSpan={8 + 48} className="px-4 py-12 text-center text-gray-500">
                                             <div className="flex flex-col items-center">
                                                 <span className="text-4xl mb-2">📅</span>
                                                 <p>No schedule data found</p>

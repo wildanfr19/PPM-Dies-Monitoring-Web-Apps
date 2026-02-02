@@ -11,7 +11,7 @@ import {
 
 ChartJS. register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function BarChart({ data, title, stacked = true }) {
+export default function BarChart({ data, title, icon, stacked = true }) {
     const chartData = {
         labels: data?.labels || [],
         datasets: [
@@ -85,6 +85,7 @@ export default function BarChart({ data, title, stacked = true }) {
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                {icon && <i className={`fas ${icon} mr-2 text-blue-500`}></i>}
                 {title || 'Dies by Tonnage'}
             </h3>
             <div className="h-72">

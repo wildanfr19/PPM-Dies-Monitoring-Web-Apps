@@ -22,7 +22,7 @@ ChartJS.register(
     Filler
 );
 
-export default function LineChart({ data, title, fill = true }) {
+export default function LineChart({ data, title, icon, fill = true }) {
     const chartData = {
         labels: data?.labels || [],
         datasets: [
@@ -88,6 +88,7 @@ export default function LineChart({ data, title, fill = true }) {
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                {icon && <i className={`fas ${icon} mr-2 text-blue-500`}></i>}
                 {title || 'Production Trend'}
             </h3>
             <div className="h-72">

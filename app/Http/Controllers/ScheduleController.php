@@ -137,6 +137,13 @@ class ScheduleController extends Controller
                 'ppm_status' => $die->ppm_status,
                 'last_ppm_date' => $die->last_ppm_date?->format('d-M-Y'),
                 'monthly_data' => $monthlyData,
+                // PPM Conditions Info
+                'ppm_trigger_condition' => $die->ppm_trigger_condition,
+                'ppm_conditions_info' => $die->ppm_conditions_info,
+                'next_ppm_stroke' => $die->next_ppm_stroke,
+                'ppm_count' => $die->ppm_count ?? 0,
+                'total_ppm_checkpoints' => $die->total_ppm_checkpoints,
+                'lot_size' => $die->lot_size_value,
             ];
         }
 

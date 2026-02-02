@@ -8,7 +8,7 @@ import {
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export default function DoughnutChart({ data, title }) {
+export default function DoughnutChart({ data, title, icon }) {
     const chartData = {
         labels: data?. labels || ['OK', 'Warning', 'Critical'],
         datasets: [
@@ -62,6 +62,7 @@ export default function DoughnutChart({ data, title }) {
     return (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 text-center">
+                {icon && <i className={`fas ${icon} mr-2 text-blue-500`}></i>}
                 {title || 'Dies Status Distribution'}
             </h3>
             <div className="h-64">

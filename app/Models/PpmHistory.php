@@ -13,6 +13,7 @@ class PpmHistory extends Model
         'die_id',
         'ppm_date',
         'stroke_at_ppm',
+        'ppm_number',
         'pic',
         'status',
         'maintenance_type',

@@ -11,6 +11,7 @@ class ProductionLog extends Model
 
     protected $fillable = [
         'die_id',
+        'model',
         'production_date',
         'shift',
         'line',
