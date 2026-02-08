@@ -1,12 +1,23 @@
 import React, { useState, useRef } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 
 export default function ScheduleIndex({ auth, year, scheduleData, customers, tonnages, filters }) {
     const [selectedYear, setSelectedYear] = useState(year);
     const [customerId, setCustomerId] = useState(filters?.customer_id || '');
     const [tonnageId, setTonnageId] = useState(filters?.tonnage_id || '');
+    const [editingCell, setEditingCell] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
     const tableRef = useRef(null);
+
+    const { data, setData, post, processing, reset } = useForm({
+        die_id: '',
+        year: year,
+        month: '',
+        week: '',
+        field: '',
+        value: '',
+    });
 
     const months = [
         { name: 'Jan', short: 'Jan' },
@@ -33,6 +44,76 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
         }, {
             preserveState:  true,
         });
+    };
+
+    const handleCellClick = (die, monthIdx, weekIdx, field, currentValue) => {
+        setEditingCell({
+            die,
+            month: monthIdx + 1,
+            week: weekIdx + 1,
+            field,
+            currentValue,
+        });
+        setData({
+            die_id: die.id,
+            year: selectedYear,
+            month: monthIdx + 1,
+            week: weekIdx + 1,
+            field: field,
+            value: currentValue || '',
+        });
+        setShowEditModal(true);
+    };
+
+    const handleSaveCell = (e) => {
+        e.preventDefault();
+        post(route('schedule.update-cell'), {
+            onSuccess: () => {
+                setShowEditModal(false);
+                setEditingCell(null);
+                reset();
+            },
+            preserveScroll: true,
+        });
+    };
+
+    const getFieldLabel = (field) => {
+        switch (field) {
+            case 'forecast': return 'Forecast Stroke';
+            case 'plan': return 'Plan Week (1-4)';
+            case 'stroke': return 'Actual Stroke';
+            case 'ppm_date': return 'PPM Date';
+            case 'pic': return 'PIC (Person In Charge)';
+            default: return field;
+        }
+    };
+
+    const getFieldType = (field) => {
+        switch (field) {
+            case 'forecast':
+            case 'stroke':
+            case 'plan':
+                return 'number';
+            case 'ppm_date':
+                return 'date';
+            default:
+                return 'text';
+        }
+    };
+
+    const renderEditableCell = (die, monthIdx, weekIdx, field, value, displayValue) => {
+        const isEditable = ['forecast', 'plan', 'stroke', 'ppm_date', 'pic'].includes(field);
+
+        return (
+            <td
+                key={`${die.id}-${field}-${monthIdx}-${weekIdx}`}
+                className={`border px-1 py-1 text-center ${isEditable ? 'cursor-pointer hover:bg-blue-50' : ''}`}
+                onClick={() => isEditable && handleCellClick(die, monthIdx, weekIdx, field, value)}
+                title={isEditable ? 'Click to edit' : ''}
+            >
+                {displayValue}
+            </td>
+        );
     };
 
     const getStatusColor = (status) => {
@@ -131,6 +212,12 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                         >
                             🔍 Apply Filter
                         </button>
+                    </div>
+
+                    {/* Edit hint */}
+                    <div className="mt-3 text-xs text-gray-500 flex items-center gap-1">
+                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">💡 Tip:</span>
+                        <span>Click on Forecast, Plan, Stroke, PPM Date, or PIC cells to edit them</span>
                     </div>
                 </div>
 
@@ -283,13 +370,15 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                         <td className="border px-2 py-1 text-xs bg-gray-50 font-medium">
                                                             Forecast
                                                         </td>
-                                                        {/* Forecast cells */}
+                                                        {/* Forecast cells - Editable */}
                                                         {months.map((_, monthIdx) => (
-                                                            weeks.map((_, weekIdx) => (
-                                                                <td key={`${die.id}-forecast-${monthIdx}-${weekIdx}`} className="border px-1 py-1 text-center">
-                                                                    {renderCell(die.monthly_data?.[monthIdx + 1]?. forecast?.[weekIdx], 'forecast')}
-                                                                </td>
-                                                            ))
+                                                            weeks.map((_, weekIdx) => {
+                                                                const value = die.monthly_data?.[monthIdx + 1]?.forecast?.[weekIdx];
+                                                                return renderEditableCell(
+                                                                    die, monthIdx, weekIdx, 'forecast', value,
+                                                                    renderCell(value, 'forecast')
+                                                                );
+                                                            })
                                                         ))}
                                                     </tr>
 
@@ -303,12 +392,15 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                         <td className="border px-2 py-1 text-xs bg-gray-50 font-medium">
                                                             Plan
                                                         </td>
+                                                        {/* Plan cells - Editable */}
                                                         {months.map((_, monthIdx) => (
-                                                            weeks.map((_, weekIdx) => (
-                                                                <td key={`${die.id}-plan-${monthIdx}-${weekIdx}`} className="border px-1 py-1 text-center">
-                                                                    {renderCell(die.monthly_data?.[monthIdx + 1]?.plan?.[weekIdx], 'plan')}
-                                                                </td>
-                                                            ))
+                                                            weeks.map((_, weekIdx) => {
+                                                                const value = die.monthly_data?.[monthIdx + 1]?.plan?.[weekIdx];
+                                                                return renderEditableCell(
+                                                                    die, monthIdx, weekIdx, 'plan', value,
+                                                                    renderCell(value, 'plan')
+                                                                );
+                                                            })
                                                         ))}
                                                     </tr>
 
@@ -345,12 +437,15 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                         <td className="border px-2 py-1 text-xs bg-gray-50 font-medium">
                                                             Stroke
                                                         </td>
+                                                        {/* Stroke cells - Editable */}
                                                         {months.map((_, monthIdx) => (
-                                                            weeks.map((_, weekIdx) => (
-                                                                <td key={`${die.id}-stroke-${monthIdx}-${weekIdx}`} className="border px-1 py-1 text-center">
-                                                                    {renderCell(die.monthly_data?.[monthIdx + 1]?.stroke?.[weekIdx], 'stroke')}
-                                                                </td>
-                                                            ))
+                                                            weeks.map((_, weekIdx) => {
+                                                                const value = die.monthly_data?.[monthIdx + 1]?.stroke?.[weekIdx];
+                                                                return renderEditableCell(
+                                                                    die, monthIdx, weekIdx, 'stroke', value,
+                                                                    renderCell(value, 'stroke')
+                                                                );
+                                                            })
                                                         ))}
                                                     </tr>
 
@@ -362,12 +457,15 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                         <td className="border px-2 py-1 text-xs bg-gray-50 font-medium">
                                                             PPM Date
                                                         </td>
-                                                        {months. map((_, monthIdx) => (
-                                                            weeks.map((_, weekIdx) => (
-                                                                <td key={`${die.id}-ppmdate-${monthIdx}-${weekIdx}`} className="border px-1 py-1 text-center">
-                                                                    {renderCell(die.monthly_data?.[monthIdx + 1]?.ppm_date?.[weekIdx])}
-                                                                </td>
-                                                            ))
+                                                        {/* PPM Date cells - Editable */}
+                                                        {months.map((_, monthIdx) => (
+                                                            weeks.map((_, weekIdx) => {
+                                                                const value = die.monthly_data?.[monthIdx + 1]?.ppm_date?.[weekIdx];
+                                                                return renderEditableCell(
+                                                                    die, monthIdx, weekIdx, 'ppm_date', value,
+                                                                    renderCell(value)
+                                                                );
+                                                            })
                                                         ))}
                                                     </tr>
 
@@ -379,12 +477,15 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                         <td className="border px-2 py-1 text-xs bg-gray-50 font-medium">
                                                             Pic
                                                         </td>
+                                                        {/* PIC cells - Editable */}
                                                         {months.map((_, monthIdx) => (
-                                                            weeks.map((_, weekIdx) => (
-                                                                <td key={`${die.id}-pic-${monthIdx}-${weekIdx}`} className="border px-1 py-1 text-center">
-                                                                    {renderCell(die.monthly_data?.[monthIdx + 1]?.pic?.[weekIdx])}
-                                                                </td>
-                                                            ))
+                                                            weeks.map((_, weekIdx) => {
+                                                                const value = die.monthly_data?.[monthIdx + 1]?.pic?.[weekIdx];
+                                                                return renderEditableCell(
+                                                                    die, monthIdx, weekIdx, 'pic', value,
+                                                                    renderCell(value)
+                                                                );
+                                                            })
                                                         ))}
                                                     </tr>
                                                 </React.Fragment>
@@ -429,6 +530,10 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                             <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">2000</span>
                             <span>OK</span>
                         </div>
+                        <div className="flex items-center gap-2 ml-4 border-l pl-4">
+                            <span className="bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Cell</span>
+                            <span>Click to Edit</span>
+                        </div>
                     </div>
                 </div>
 
@@ -460,6 +565,95 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                     </div>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            {showEditModal && editingCell && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
+                        <div className="p-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                    ✏️ Edit Schedule
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        setShowEditModal(false);
+                                        setEditingCell(null);
+                                        reset();
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <span className="text-gray-500">Die:</span>
+                                        <span className="ml-2 font-medium">{editingCell.die.part_number}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500">Month/Week:</span>
+                                        <span className="ml-2 font-medium">
+                                            {months[editingCell.month - 1]?.name} / Week {weeks[editingCell.week - 1]}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleSaveCell}>
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        {getFieldLabel(editingCell.field)}
+                                    </label>
+                                    <input
+                                        type={getFieldType(editingCell.field)}
+                                        value={data.value}
+                                        onChange={(e) => setData('value', e.target.value)}
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        placeholder={`Enter ${getFieldLabel(editingCell.field).toLowerCase()}`}
+                                        autoFocus
+                                    />
+                                    {editingCell.field === 'plan' && (
+                                        <p className="mt-1 text-xs text-gray-500">Enter week number (1-4) to mark as planned</p>
+                                    )}
+                                </div>
+
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setData('value', '');
+                                        }}
+                                        className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                    >
+                                        Clear
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowEditModal(false);
+                                            setEditingCell(null);
+                                            reset();
+                                        }}
+                                        className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                    >
+                                        {processing ? 'Saving...' : 'Save'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AppLayout>
     );
 }

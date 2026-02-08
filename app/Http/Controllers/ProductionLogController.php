@@ -45,7 +45,7 @@ class ProductionLogController extends Controller
         return Inertia::render('Production/Create', [
             'dies' => DieModel::with(['customer:id,code', 'machineModel:id,code'])
                 ->active()
-                ->get(['id', 'part_number', 'part_name', 'customer_id', 'machine_model_id', 'line', 'qty_die']),
+                ->get(['id', 'part_number', 'part_name', 'customer_id', 'machine_model_id', 'line', 'qty_die', 'model']),
         ]);
     }
 

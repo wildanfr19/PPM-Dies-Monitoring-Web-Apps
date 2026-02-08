@@ -32,13 +32,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Master Data - Admin only
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('customers', CustomerController::class)->except(['show']);
-        Route::resource('machine-models', MachineModelController::class)->except(['show']);
         Route::resource('users', UserController::class)->except(['show']);
         Route::post('users/{user}/remove-photo', [UserController::class, 'removePhoto'])->name('users.remove-photo');
 
         // Test Alert (Admin only)
         Route::get('/test-alert', [DieController::class, 'showTestAlert'])->name('test-alert.index');
         Route::post('/test-alert/send', [DieController::class, 'sendTestAlert'])->name('test-alert.send');
+    });
+
+    // Machine Models - Admin and mtn_dies
+    Route::middleware(['role:admin,mtn_dies'])->group(function () {
+        Route::resource('machine-models', MachineModelController::class)->except(['show']);
     });
 
     // Dies Management - Create/Edit/Delete for admin and mtn_dies only

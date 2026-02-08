@@ -25,13 +25,16 @@ export default function ProductionCreate({ auth, dies }) {
         post(route('production.store'));
     };
 
-    // Auto-fill line when die is selected
+    // Auto-fill line and model when die is selected
     const handleDieChange = (dieId) => {
-        setData('die_id', dieId);
         const selectedDie = dies?.find(d => d.id === parseInt(dieId));
-        if (selectedDie?. line) {
-            setData(prev => ({ ...prev, die_id: dieId, line: selectedDie.line }));
-        }
+        setData(prev => ({
+            ...prev,
+            die_id: dieId,
+            line: selectedDie?.line || '',
+            model: selectedDie?.machine_model?.code || ''
+            // model: selectedDie?.code || ''
+        }));
     };
 
     // Calculate total hours when times change

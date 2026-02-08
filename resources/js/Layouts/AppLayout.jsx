@@ -32,7 +32,7 @@ export default function AppLayout({ user, header, children }) {
     // Filter navigation based on user role
     const navigation = allNavigation.filter(item => item.roles.includes(user.role));
 
-    // Master Data - Admin only (Tonnage Standards also for mtn_dies)
+    // Master Data - Admin only (Machine Models & Tonnage Standards also for mtn_dies)
     const masterNavigation = isAdmin ? [
         { name: 'Customers', href: route('customers.index'), icon: 'fa-building', current: url.startsWith('/customers') },
         { name: 'Machine Models', href: route('machine-models.index'), icon: 'fa-industry', current: url.startsWith('/machine-models') },
@@ -40,6 +40,7 @@ export default function AppLayout({ user, header, children }) {
         { name: 'Users', href: route('users.index'), icon: 'fa-users', current: url.startsWith('/users') },
         { name: 'Test Alert', href: route('test-alert.index'), icon: 'fa-bell', current: url.startsWith('/test-alert') },
     ] : isMtnDies ? [
+        { name: 'Machine Models', href: route('machine-models.index'), icon: 'fa-industry', current: url.startsWith('/machine-models') },
         { name: 'Tonnage Standards', href: route('tonnage-standards.index'), icon: 'fa-ruler-combined', current: url.startsWith('/tonnage-standards') },
     ] : [];
 
