@@ -3,7 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 
 export default function TonnageStandardIndex({ auth, tonnageStandards }) {
     const handleDelete = (id) => {
-        if (confirm('Are you sure you want to delete this tonnage standard?')) {
+        if (confirm('Are you sure you want to delete this standard stroke?')) {
             router.delete(route('tonnage-standards.destroy', id));
         }
     };
@@ -13,25 +13,25 @@ export default function TonnageStandardIndex({ auth, tonnageStandards }) {
             user={auth.user}
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                    ⚙️ Tonnage Standards Setup
+                    ⚙️ Standard Strokes Setup
                 </h2>
             }
         >
-            <Head title="Tonnage Standards" />
+            <Head title="Standard Strokes" />
 
             <div className="py-6 px-6 space-y-6">
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
                         <p className="text-gray-500 dark:text-gray-400">
-                            Manage tonnage standards, lot sizes, and PPM thresholds
+                            Manage standard strokes, lot sizes, and PPM thresholds
                         </p>
                     </div>
                     <Link
                         href={route('tonnage-standards.create')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                     >
-                        <i className="fas fa-plus"></i> Add Tonnage Standard
+                        <i className="fas fa-plus"></i> Add Standard Stroke
                     </Link>
                 </div>
 
@@ -146,12 +146,12 @@ export default function TonnageStandardIndex({ auth, tonnageStandards }) {
                                         <td colSpan="9" className="px-4 py-12 text-center">
                                             <div className="flex flex-col items-center">
                                                 <i className="fas fa-cog text-4xl text-gray-400 mb-2"></i>
-                                                <p className="text-gray-500 dark:text-gray-400">No tonnage standards found</p>
+                                                <p className="text-gray-500 dark:text-gray-400">No standard strokes found</p>
                                                 <Link
                                                     href={route('tonnage-standards.create')}
                                                     className="mt-2 text-blue-600 hover:text-blue-800"
                                                 >
-                                                    Add your first tonnage standard →
+                                                    Add your first standard stroke →
                                                 </Link>
                                             </div>
                                         </td>
@@ -164,7 +164,7 @@ export default function TonnageStandardIndex({ auth, tonnageStandards }) {
                     {/* Summary Footer */}
                     <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Total: {tonnageStandards?.length || 0} tonnage standards
+                            Total: {tonnageStandards?.length || 0} standard strokes
                         </div>
                     </div>
                 </div>

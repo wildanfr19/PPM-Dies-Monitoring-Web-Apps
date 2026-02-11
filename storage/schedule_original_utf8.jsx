@@ -131,7 +131,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
         }
 
         if (type === 'actual' && value === true) {
-            return <span className="text-xl">●</span>;
+            return <span className="text-xl">ΓùÅ</span>;
         }
 
         if (type === 'plan' && value) {
@@ -153,8 +153,17 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
         return <span className="text-xs">{value}</span>;
     };
 
-    const ScheduleCalendarContent = () => (
-        <>
+    return (
+        <AppLayout
+            user={auth.user}
+            header={
+                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
+                    ≡ƒôà PPM Schedule Calendar
+                </h2>
+            }
+        >
+            <Head title="PPM Schedule" />
+
             <div className="py-4 px-4">
                 {/* Filters */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
@@ -201,13 +210,13 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                             onClick={handleFilter}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                         >
-                            🔍 Apply Filter
+                            ≡ƒöì Apply Filter
                         </button>
                     </div>
 
                     {/* Edit hint */}
                     <div className="mt-3 text-xs text-gray-500 flex items-center gap-1">
-                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">💡 Tip:</span>
+                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">≡ƒÆí Tip:</span>
                         <span>Click on Forecast, Plan, Stroke, PPM Date, or PIC cells to edit them</span>
                     </div>
                 </div>
@@ -348,7 +357,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                                 {/* Both conditions indicator */}
                                                                 {die.ppm_trigger_condition?.type === 'both' && (
                                                                     <div className="text-[8px] text-center text-orange-600 font-medium">
-                                                                        ⚡ Final
+                                                                        ΓÜí Final
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -487,7 +496,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                     <tr>
                                         <td colSpan={8 + 48} className="px-4 py-12 text-center text-gray-500">
                                             <div className="flex flex-col items-center">
-                                                <span className="text-4xl mb-2">📅</span>
+                                                <span className="text-4xl mb-2">≡ƒôà</span>
                                                 <p>No schedule data found</p>
                                                 <p className="text-sm text-gray-400 mt-1">Try adjusting your filters</p>
                                             </div>
@@ -502,7 +511,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                     <div className="bg-gray-50 px-4 py-3 border-t flex flex-wrap items-center gap-6 text-sm">
                         <span className="font-medium text-gray-700">Legend:</span>
                         <div className="flex items-center gap-2">
-                            <span className="text-xl">●</span>
+                            <span className="text-xl">ΓùÅ</span>
                             <span>PPM Done</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -564,7 +573,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                         <div className="p-6">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    ✏️ Edit Schedule
+                                    Γ£Å∩╕Å Edit Schedule
                                 </h3>
                                 <button
                                     onClick={() => {
@@ -574,7 +583,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                     }}
                                     className="text-gray-400 hover:text-gray-600"
                                 >
-                                    ✕
+                                    Γ£ò
                                 </button>
                             </div>
 
@@ -645,24 +654,6 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                     </div>
                 </div>
             )}
-        </>
-    );
-
-    return (
-        <AppLayout
-            user={auth.user}
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                    📅 PPM Schedule Calendar
-                </h2>
-            }
-        >
-            <Head title="PPM Schedule" />
-            {/* Schedule calendar content hidden for presentation */}
-            {/* <ScheduleCalendarContent /> */}
-            <div className="py-4 px-4">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm min-h-[60vh]"></div>
-            </div>
         </AppLayout>
     );
 }

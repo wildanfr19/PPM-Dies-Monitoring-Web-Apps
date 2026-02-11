@@ -6,7 +6,7 @@ export default function Sidebar() {
     const navigation = [
         { name:  'Dashboard', href: route('dashboard'), icon: '📊', current: url === '/dashboard' },
         { name:  'Dies List', href: route('dies.index'), icon: '🔧', current: url.startsWith('/dies') },
-        { name: 'Production Log', href: route('production.index'), icon: '⚙️', current: url.startsWith('/production') },
+        { name: 'Production Result', href: route('production.index'), icon: '⚙️', current: url.startsWith('/production') },
     ];
 
     const management = [

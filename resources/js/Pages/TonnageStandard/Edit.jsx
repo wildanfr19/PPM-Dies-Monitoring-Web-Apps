@@ -28,21 +28,21 @@ export default function TonnageStandardEdit({ auth, tonnageStandard }) {
             header={
                 <div className="flex items-center gap-2">
                     <Link href={route('tonnage-standards.index')} className="text-gray-500 hover:text-gray-700">
-                        Tonnage Standards
+                        Standard Strokes
                     </Link>
                     <span className="text-gray-400">/</span>
                     <span>Edit: {tonnageStandard.tonnage}</span>
                 </div>
             }
         >
-            <Head title={`Edit Tonnage Standard - ${tonnageStandard.tonnage}`} />
+            <Head title={`Edit Standard Stroke - ${tonnageStandard.tonnage}`} />
 
             <div className="py-6 px-6">
                 <div className="max-w-2xl mx-auto">
                     <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg">
                         <div className="p-6">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
-                                ✏️ Edit Tonnage Standard
+                                ✏️ Edit Standard Stroke
                             </h3>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
@@ -204,7 +204,7 @@ export default function TonnageStandardEdit({ auth, tonnageStandard }) {
                                         disabled={processing}
                                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                                     >
-                                        {processing ? 'Saving...' : 'Update Tonnage Standard'}
+                                        {processing ? 'Saving...' : 'Update Standard Stroke'}
                                     </button>
                                 </div>
                             </form>

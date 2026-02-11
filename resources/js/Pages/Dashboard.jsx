@@ -38,21 +38,21 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                         color="blue"
                     />
                     <StatsCard
-                        title="OK Status"
+                        title="Green"
                         value={stats?. ok || 0}
                         icon="fa-check-circle"
                         color="green"
                         subtitle="PPM up to date"
                     />
                     <StatsCard
-                        title="Warning"
+                        title="Orange"
                         value={stats?. warning || 0}
                         icon="fa-exclamation-triangle"
                         color="orange"
                         subtitle="Plan PPM soon"
                     />
                     <StatsCard
-                        title="Critical"
+                        title="Red"
                         value={stats?.critical || 0}
                         icon="fa-times-circle"
                         color="red"
@@ -127,15 +127,15 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                         <div className="mt-6 grid grid-cols-3 gap-2 text-center text-sm">
                             <div className="bg-green-50 rounded-lg p-2">
                                 <div className="font-bold text-green-600">{stats?.ok || 0}</div>
-                                <div className="text-green-700 text-xs">OK</div>
+                                <div className="text-green-700 text-xs">GREEN</div>
                             </div>
                             <div className="bg-orange-50 rounded-lg p-2">
                                 <div className="font-bold text-orange-600">{stats?.warning || 0}</div>
-                                <div className="text-orange-700 text-xs">Warning</div>
+                                <div className="text-orange-700 text-xs">ORANGE</div>
                             </div>
                             <div className="bg-red-50 rounded-lg p-2">
                                 <div className="font-bold text-red-600">{stats?.critical || 0}</div>
-                                <div className="text-red-700 text-xs">Critical</div>
+                                <div className="text-red-700 text-xs">RED</div>
                             </div>
                         </div>
                     </div>

@@ -8,14 +8,14 @@ export default function ProductionShow({ auth, log }) {
             header={
                 <div className="flex items-center gap-2">
                     <Link href={route('production.index')} className="text-gray-500 hover:text-gray-700">
-                        Production Logs
+                        Production Results
                     </Link>
                     <span className="text-gray-400">/</span>
                     <span>Detail #{log.id}</span>
                 </div>
             }
         >
-            <Head title={`Production Log #${log.id}`} />
+            <Head title={`Production Result #${log.id}`} />
 
             <div className="py-6 px-6">
                 <div className="max-w-3xl mx-auto">
@@ -24,7 +24,7 @@ export default function ProductionShow({ auth, log }) {
                         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h2 className="text-2xl font-bold">Production Log #{log.id}</h2>
+                                    <h2 className="text-2xl font-bold">Production Result #{log.id}</h2>
                                     <p className="text-blue-100 mt-1">
                                         {log.production_date} • Shift {log.shift}
                                     </p>

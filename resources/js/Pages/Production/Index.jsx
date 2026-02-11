@@ -26,7 +26,7 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
     };
 
     const handleDelete = async (id, partNumber) => {
-        const confirmed = await confirmDelete(`production log for ${partNumber}`);
+        const confirmed = await confirmDelete(`production result for ${partNumber}`);
         if (confirmed) {
             router.delete(route('production.destroy', id));
         }
@@ -37,11 +37,11 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
             user={auth.user}
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                    Production Logs
+                    Production Results
                 </h2>
             }
         >
-            <Head title="Production Logs" />
+            <Head title="Production Results" />
 
             <div className="py-6 px-6 space-y-6">
 
@@ -55,7 +55,7 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                             href={route('production.create')}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                         >
-                            <i className="fas fa-plus"></i> Add Production Log
+                            <i className="fas fa-plus"></i> Add Production Result
                         </Link>
                     </div>
                 </div>
@@ -224,12 +224,12 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                                         <td colSpan="11" className="px-4 py-12 text-center">
                                             <div className="flex flex-col items-center">
                                                 <span className="text-4xl mb-2">📦</span>
-                                                <p className="text-gray-500 dark:text-gray-400">No production logs found</p>
+                                                <p className="text-gray-500 dark:text-gray-400">No production results found</p>
                                                 <Link
                                                     href={route('production.create')}
                                                     className="mt-2 text-blue-600 hover:text-blue-800"
                                                 >
-                                                    Add your first production log →
+                                                    Add your first production result →
                                                 </Link>
                                             </div>
                                         </td>

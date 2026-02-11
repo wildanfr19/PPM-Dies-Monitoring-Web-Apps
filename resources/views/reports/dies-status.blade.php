@@ -115,15 +115,15 @@
             </td>
             <td class="stat-box ok">
                 <div class="number">{{ $stats['ok'] }}</div>
-                <div class="label">OK Status</div>
+                <div class="label">Green</div>
             </td>
             <td class="stat-box warning">
                 <div class="number">{{ $stats['warning'] }}</div>
-                <div class="label">Warning</div>
+                <div class="label">Orange</div>
             </td>
             <td class="stat-box critical">
                 <div class="number">{{ $stats['critical'] }}</div>
-                <div class="label">Critical</div>
+                <div class="label">Red</div>
             </td>
         </tr>
     </table>

@@ -62,20 +62,20 @@ export default function ProductionCreate({ auth, dies }) {
             header={
                 <div className="flex items-center gap-2">
                     <Link href={route('production.index')} className="text-gray-500 hover:text-gray-700">
-                        Production Logs
+                        Production Results
                     </Link>
                     <span className="text-gray-400">/</span>
                     <span>Add New</span>
                 </div>
             }
         >
-            <Head title="Add Production Log" />
+            <Head title="Add Production Result" />
 
             <div className="py-6 px-6">
                 <div className="max-w-3xl mx-auto">
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
-                            ⚙️ Add Production Log
+                            ⚙️ Add Production Result
                         </h3>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
@@ -277,7 +277,7 @@ export default function ProductionCreate({ auth, dies }) {
                                     disabled={processing}
                                     className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
                                 >
-                                    {processing ? 'Saving...' : '💾 Save Production Log'}
+                                    {processing ? 'Saving...' : '💾 Save Production Result'}
                                 </button>
                             </div>
                         </form>

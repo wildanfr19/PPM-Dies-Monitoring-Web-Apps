@@ -192,7 +192,7 @@ export default function Welcome({ auth }) {
                                 </div>
                                 <h3 className="text-xl font-semibold text-white mb-3">Data Import</h3>
                                 <p className="text-gray-400">
-                                    Import die data and production logs from Excel files for faster bulk input.
+                                    Import die data and production results from Excel files for faster bulk input.
                                 </p>
                             </div>
                         </div>
@@ -218,7 +218,7 @@ export default function Welcome({ auth }) {
                                 </div>
                                 <h3 className="text-lg font-semibold text-white mb-2">Register Die Data</h3>
                                 <p className="text-gray-400 text-sm">
-                                    Register all dies with their PPM standard tonnage information
+                                    Register all dies with their PPM standard stroke information
                                 </p>
                             </div>
 
@@ -228,7 +228,7 @@ export default function Welcome({ auth }) {
                                 </div>
                                 <h3 className="text-lg font-semibold text-white mb-2">Record Production</h3>
                                 <p className="text-gray-400 text-sm">
-                                    Input daily production logs for each die used
+                                    Input daily production results for each die used
                                 </p>
                             </div>
 
