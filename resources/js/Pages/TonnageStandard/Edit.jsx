@@ -28,7 +28,7 @@ export default function TonnageStandardEdit({ auth, tonnageStandard }) {
             header={
                 <div className="flex items-center gap-2">
                     <Link href={route('tonnage-standards.index')} className="text-gray-500 hover:text-gray-700">
-                        Tonnage Standards
+                         Standards Stroke
                     </Link>
                     <span className="text-gray-400">/</span>
                     <span>Edit: {tonnageStandard.tonnage}</span>

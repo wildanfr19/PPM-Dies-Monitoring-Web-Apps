@@ -24,7 +24,7 @@ export default function AppLayout({ user, header, children }) {
         { name: 'Dashboard', href: route('dashboard'), icon: 'fa-chart-pie', current: url === '/dashboard', roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm'] },
         { name: 'Dies List', href: route('dies.index'), icon: 'fa-wrench', current: url.startsWith('/dies'), roles: ['admin', 'mtn_dies', 'md', 'mgr_gm'] },
         { name: 'Schedule Calendar', href: route('schedule.index'), icon: 'fa-calendar-alt', current: url.startsWith('/schedule'), roles: ['admin', 'mtn_dies'] },
-        { name: 'Production Log', href: route('production.index'), icon: 'fa-cogs', current: url.startsWith('/production'), roles: ['admin', 'mtn_dies', 'production', 'pe'] },
+        { name: 'Production Result', href: route('production.index'), icon: 'fa-cogs', current: url.startsWith('/production'), roles: ['admin', 'mtn_dies', 'production', 'pe'] },
         { name: 'Import / Export', href: route('import.index'), icon: 'fa-file-import', current: url.startsWith('/import'), roles: ['admin', 'mtn_dies', 'production'] },
         { name: 'Reports', href: route('reports.index'), icon: 'fa-chart-line', current: url.startsWith('/reports'), roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm'] },
     ];
@@ -36,12 +36,12 @@ export default function AppLayout({ user, header, children }) {
     const masterNavigation = isAdmin ? [
         { name: 'Customers', href: route('customers.index'), icon: 'fa-building', current: url.startsWith('/customers') },
         { name: 'Machine Models', href: route('machine-models.index'), icon: 'fa-industry', current: url.startsWith('/machine-models') },
-        { name: 'Tonnage Standards', href: route('tonnage-standards.index'), icon: 'fa-ruler-combined', current: url.startsWith('/tonnage-standards') },
+        { name: 'Standard Stroke', href: route('tonnage-standards.index'), icon: 'fa-ruler-combined', current: url.startsWith('/tonnage-standards') },
         { name: 'Users', href: route('users.index'), icon: 'fa-users', current: url.startsWith('/users') },
         { name: 'Test Alert', href: route('test-alert.index'), icon: 'fa-bell', current: url.startsWith('/test-alert') },
     ] : isMtnDies ? [
         { name: 'Machine Models', href: route('machine-models.index'), icon: 'fa-industry', current: url.startsWith('/machine-models') },
-        { name: 'Tonnage Standards', href: route('tonnage-standards.index'), icon: 'fa-ruler-combined', current: url.startsWith('/tonnage-standards') },
+        { name: 'Standard Stroke', href: route('tonnage-standards.index'), icon: 'fa-ruler-combined', current: url.startsWith('/tonnage-standards') },
     ] : [];
 
     return (

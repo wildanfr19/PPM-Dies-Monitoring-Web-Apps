@@ -138,7 +138,7 @@ export default function ImportIndex({ auth }) {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                                                <i className="fas fa-file-upload text-blue-500"></i> Import Production Log (Act_Prod)
+                                                <i className="fas fa-file-upload text-blue-500"></i> Import Production Result (Act_Prod)
                                             </h3>
                                             <p className="text-sm text-gray-500 mt-1">
                                                 Import daily production data from Excel file.  Output will be added to die's stroke count.

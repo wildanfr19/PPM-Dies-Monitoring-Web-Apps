@@ -38,21 +38,21 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                         color="blue"
                     />
                     <StatsCard
-                        title="OK Status"
+                        title="Green Status"
                         value={stats?. ok || 0}
                         icon="fa-check-circle"
                         color="green"
                         subtitle="PPM up to date"
                     />
                     <StatsCard
-                        title="Warning"
+                        title="Orange Status"
                         value={stats?. warning || 0}
                         icon="fa-exclamation-triangle"
                         color="orange"
                         subtitle="Plan PPM soon"
                     />
                     <StatsCard
-                        title="Critical"
+                        title="Red Status"
                         value={stats?.critical || 0}
                         icon="fa-times-circle"
                         color="red"

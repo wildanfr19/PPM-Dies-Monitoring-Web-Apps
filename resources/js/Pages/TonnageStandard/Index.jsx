@@ -13,25 +13,26 @@ export default function TonnageStandardIndex({ auth, tonnageStandards }) {
             user={auth.user}
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                    ⚙️ Tonnage Standards Setup
+                    ⚙️ Standards Stroke Setup
                 </h2>
             }
         >
-            <Head title="Tonnage Standards" />
+            <Head title="Standards Stroke" />
 
             <div className="py-6 px-6 space-y-6">
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
                         <p className="text-gray-500 dark:text-gray-400">
-                            Manage tonnage standards, lot sizes, and PPM thresholds
+                            Manage standards stroke, lot sizes, and PPM thresholds
                         </p>
                     </div>
                     <Link
                         href={route('tonnage-standards.create')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                     >
-                        <i className="fas fa-plus"></i> Add Tonnage Standard
+                        <i className="fas fa-plus"></i> Add Standard Stroke
+
                     </Link>
                 </div>
 

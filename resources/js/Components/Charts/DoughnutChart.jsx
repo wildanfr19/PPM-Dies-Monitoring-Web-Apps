@@ -9,6 +9,7 @@ import {
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function DoughnutChart({ data, title, icon }) {
+    // console.log('DoughnutChart Data:', data);
     const chartData = {
         labels: data?. labels || ['OK', 'Warning', 'Critical'],
         datasets: [

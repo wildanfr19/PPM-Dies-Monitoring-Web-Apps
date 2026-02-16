@@ -16,7 +16,7 @@ export default function BarChart({ data, title, icon, stacked = true }) {
         labels: data?.labels || [],
         datasets: [
             {
-                label: 'OK',
+                label: 'GREEN (OK)',
                 data: data?.ok || [],
                 backgroundColor: 'rgba(34, 197, 94, 0.8)',
                 borderColor: 'rgba(34, 197, 94, 1)',
@@ -24,7 +24,7 @@ export default function BarChart({ data, title, icon, stacked = true }) {
                 borderRadius: 4,
             },
             {
-                label:  'Warning',
+                label:  'ORANGE (Warning)',
                 data:  data?.warning || [],
                 backgroundColor: 'rgba(249, 115, 22, 0.8)',
                 borderColor: 'rgba(249, 115, 22, 1)',
@@ -32,7 +32,7 @@ export default function BarChart({ data, title, icon, stacked = true }) {
                 borderRadius: 4,
             },
             {
-                label:  'Critical',
+                label:  'RED (Critical)',
                 data:  data?.critical || [],
                 backgroundColor: 'rgba(239, 68, 68, 0.8)',
                 borderColor: 'rgba(239, 68, 68, 1)',

@@ -37,7 +37,7 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
             user={auth.user}
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                    Production Logs
+                    Production Result
                 </h2>
             }
         >
@@ -55,7 +55,7 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                             href={route('production.create')}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                         >
-                            <i className="fas fa-plus"></i> Add Production Log
+                            <i className="fas fa-plus"></i> Add Production Result
                         </Link>
                     </div>
                 </div>

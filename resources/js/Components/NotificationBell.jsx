@@ -60,7 +60,7 @@ export default function NotificationBell() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Mark as read
+    // Mark single notification as read
     const markAsRead = async (id) => {
         try {
             await axios.post(route('notifications.read', { id }));

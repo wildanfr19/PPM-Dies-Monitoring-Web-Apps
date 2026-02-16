@@ -69,13 +69,13 @@ export default function ProductionCreate({ auth, dies }) {
                 </div>
             }
         >
-            <Head title="Add Production Log" />
+            <Head title="Add Production Result" />
 
             <div className="py-6 px-6">
                 <div className="max-w-3xl mx-auto">
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
-                            ⚙️ Add Production Log
+                            ⚙️ Add Production Result
                         </h3>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
