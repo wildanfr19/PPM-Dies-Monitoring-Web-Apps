@@ -80,6 +80,24 @@ export const confirmDelete = async (itemName = 'this item') => {
     });
 };
 
+// Workflow action confirmation (for PPM workflow steps)
+export const confirmAction = async ({
+    title = 'Confirm Action',
+    text = '',
+    icon = 'question',
+    confirmText = 'Yes, Proceed',
+    confirmColor = '#3085d6',
+}) => {
+    return confirmDialog({
+        title,
+        text,
+        icon,
+        confirmButtonText: confirmText,
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: confirmColor,
+    });
+};
+
 // Success dialog (centered)
 export const successDialog = (title, text = '') => {
     return Swal.fire({

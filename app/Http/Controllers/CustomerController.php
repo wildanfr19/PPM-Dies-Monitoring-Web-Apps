@@ -22,7 +22,7 @@ class CustomerController extends Controller
                     ->orWhere('contact_person', 'like', "%{$search}%");
             })
             ->withCount('dies')
-            ->orderBy('code')
+            ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString();
 

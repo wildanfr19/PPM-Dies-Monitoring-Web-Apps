@@ -37,11 +37,23 @@ class AlertService
             $cacheKey = "ppm_orange_alert_{$die->id}_" . now()->format('Y-m-d');
 
             if (!cache()->has($cacheKey)) {
-                // Orange Alert -> MGR/GM, MD only
+                // Orange Alert -> MTN DIES, MGR/GM, MD, PPIC, PROD
                 $recipients = $this->getOrangeAlertRecipients();
                 Notification::send($recipients, new CriticalDieAlert($die));
                 cache()->put($cacheKey, true, now()->endOfDay());
                 $orangeAlertsSent++;
+
+                // Update ppm_alert_status to orange_alerted (only if not already further in the flow)
+                $advancedStatuses = [
+                    'orange_alerted', 'lot_date_set', 'ppm_scheduled', 'schedule_approved',
+                    'red_alerted', 'transferred_to_mtn', 'ppm_in_progress',
+                    'additional_repair', 'ppm_completed',
+                ];
+                if (!in_array($die->ppm_alert_status, $advancedStatuses)) {
+                    $die->update([
+                        'ppm_alert_status' => 'orange_alerted',
+                    ]);
+                }
             }
         }
 
@@ -57,8 +69,14 @@ class AlertService
                 cache()->put($cacheKey, true, now()->endOfDay());
                 $redAlertsSent++;
 
-                // Mark die as needing PPM processing
-                $die->update(['ppm_alert_status' => 'red_alerted']);
+                // Mark die as needing PPM processing and record timestamp for timeline
+                // Jangan downgrade status yang sudah lebih maju
+                if (!in_array($die->ppm_alert_status, ['red_alerted', 'transferred_to_mtn', 'ppm_in_progress', 'additional_repair', 'ppm_completed'])) {
+                    $die->update([
+                        'ppm_alert_status' => 'red_alerted',
+                        'red_alerted_at' => now(),
+                    ]);
+                }
             }
         }
 
@@ -90,34 +108,55 @@ class AlertService
     }
 
     /**
-     * Get users who should receive Orange alerts (MGR/GM, MD, Admin)
+     * Get users who should receive Orange alerts
+     * Per flowchart: MTN DIES, MGR/GM, MD, PPIC, PROD
      */
     protected function getOrangeAlertRecipients()
     {
         return User::where('is_active', true)
-            ->whereIn('role', [User::ROLE_ADMIN, User::ROLE_MGR_GM, User::ROLE_MD])
+            ->whereIn('role', [
+                User::ROLE_ADMIN,
+                User::ROLE_MTN_DIES,
+                User::ROLE_MGR_GM,
+                User::ROLE_MD,
+                User::ROLE_PPIC,
+                User::ROLE_PRODUCTION,
+            ])
             ->get();
     }
 
     /**
-     * Get users who should receive Red alerts (MGR/GM, MD, Admin, MTN Dies)
+     * Get users who should receive Red alerts
+     * Per flowchart: MTN DIES, MGR/GM, MD, PPIC, PROD
      */
     protected function getRedAlertRecipients()
     {
         return User::where('is_active', true)
-            ->whereIn('role', [User::ROLE_ADMIN, User::ROLE_MGR_GM, User::ROLE_MD, User::ROLE_MTN_DIES])
+            ->whereIn('role', [
+                User::ROLE_ADMIN,
+                User::ROLE_MTN_DIES,
+                User::ROLE_MGR_GM,
+                User::ROLE_MD,
+                User::ROLE_PPIC,
+                User::ROLE_PRODUCTION,
+            ])
             ->get();
     }
 
     /**
-     * Get all users who should receive alerts
+     * Get all users who should receive alerts (daily summary)
      */
     protected function getAlertRecipients()
     {
         return User::where('is_active', true)
-            ->where(function ($q) {
-                $q->whereIn('role', [User::ROLE_ADMIN, User::ROLE_MGR_GM, User::ROLE_MD]);
-            })
+            ->whereIn('role', [
+                User::ROLE_ADMIN,
+                User::ROLE_MTN_DIES,
+                User::ROLE_MGR_GM,
+                User::ROLE_MD,
+                User::ROLE_PPIC,
+                User::ROLE_PRODUCTION,
+            ])
             ->get();
     }
 

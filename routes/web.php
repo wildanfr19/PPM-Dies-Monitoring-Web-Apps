@@ -11,6 +11,7 @@ use App\Http\Controllers\MachineModelController;
 use App\Http\Controllers\TonnageStandardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SpecialDiesRepairController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ScheduleController;
@@ -56,9 +57,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('dies/{die}/record-ppm', [DieController::class, 'recordPpm'])->name('dies.record-ppm');
         Route::post('dies/{die}/schedule-ppm', [DieController::class, 'schedulePpm'])->name('dies.schedule-ppm');
         Route::post('dies/{die}/start-ppm', [DieController::class, 'startPpmProcessing'])->name('dies.start-ppm');
+        // Flow: Processing PPM → "The Process is Normal?" → No → Additional Repair Dies
+        Route::post('dies/{die}/additional-repair', [DieController::class, 'markAdditionalRepair'])->name('dies.additional-repair');
+        Route::post('dies/{die}/resume-ppm', [DieController::class, 'resumePpmAfterRepair'])->name('dies.resume-ppm');
+
+        // Batch PPM Actions - multiple dies at once
+        Route::post('dies/batch/start-ppm', [DieController::class, 'batchStartPpm'])->name('dies.batch-start-ppm');
+        Route::post('dies/batch/additional-repair', [DieController::class, 'batchAdditionalRepair'])->name('dies.batch-additional-repair');
+        Route::post('dies/batch/resume-ppm', [DieController::class, 'batchResumePpm'])->name('dies.batch-resume-ppm');
+        Route::post('dies/batch/record-ppm', [DieController::class, 'batchRecordPpm'])->name('dies.batch-record-ppm');
     });
 
-    // Dies Management - View for admin, mtn_dies, mgr_gm, md
+    // PPIC: Set Last LOT Date & Approve PPM Schedule
+    // Flow: Orange Alert → PPIC creates date last of LOT → PPIC approves the PPM Schedule
+    Route::middleware(['role:admin,ppic'])->group(function () {
+        Route::post('dies/batch/set-last-lot-date', [DieController::class, 'batchSetLastLotDate'])->name('dies.batch-set-last-lot-date');
+        Route::post('dies/{die}/set-last-lot-date', [DieController::class, 'setLastLotDate'])->name('dies.set-last-lot-date');
+        Route::post('dies/{die}/approve-schedule', [DieController::class, 'approvePpmSchedule'])->name('dies.approve-schedule');
+    });
+
+    // PROD: Transfer Dies to MTN
+    // Flow: Red Alert → PROD transfers dies to MTN Dies
+    Route::middleware(['role:admin,production'])->group(function () {
+        Route::post('dies/{die}/transfer', [DieController::class, 'transferDies'])->name('dies.transfer');
+        Route::post('dies/batch/transfer', [DieController::class, 'batchTransferDies'])->name('dies.batch-transfer');
+    });
+
+    // MTN Dies: Transfer Back to Production
+    // Flow: PPM Completed → MTN Dies: Dies Location Back to Production
+    Route::middleware(['role:admin,mtn_dies'])->group(function () {
+        Route::post('dies/{die}/transfer-back', [DieController::class, 'transferBackToProduction'])->name('dies.transfer-back');
+        Route::post('dies/batch/transfer-back', [DieController::class, 'batchTransferBack'])->name('dies.batch-transfer-back');
+    });
+
+    // Dies Management - View for admin, mtn_dies, mgr_gm, md, ppic
     Route::get('dies', [DieController::class, 'index'])->name('dies.index');
     Route::get('dies/{die}', [DieController::class, 'show'])->name('dies.show');
 
@@ -68,8 +100,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('production/import', [ProductionLogController::class, 'import'])->name('production.import');
     });
 
-    // Schedule Calendar - admin, mtn_dies
-    Route::middleware(['role:admin,mtn_dies'])->group(function () {
+    // Schedule Calendar - admin, mtn_dies, ppic
+    Route::middleware(['role:admin,mtn_dies,ppic'])->group(function () {
         Route::get('/schedule', [ScheduleController::class, 'index'])->name('schedule.index');
         Route::post('/schedule/update-cell', [ScheduleController:: class, 'updateCell'])->name('schedule.update-cell');
     });
@@ -79,8 +111,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('tonnage-standards', TonnageStandardController::class);
     });
 
-    // Import/Export - admin, mtn_dies, production
-    Route::middleware(['role:admin,mtn_dies,production'])->group(function () {
+    // Import/Export - admin, mtn_dies, production, pe
+    Route::middleware(['role:admin,mtn_dies,production,pe'])->group(function () {
         Route::get('/import', [ImportController::class, 'index'])->name('import.index');
         Route::get('/import/template/production', [ImportController::class, 'downloadProductionTemplate'])
             ->name('import.template.production');
@@ -116,6 +148,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
+
+    // Special Dies Repair - admin, mtn_dies, production
+    Route::middleware(['role:admin,mtn_dies,production'])->group(function () {
+        Route::get('/special-repair', [SpecialDiesRepairController::class, 'index'])->name('special-repair.index');
+        Route::get('/special-repair/create', [SpecialDiesRepairController::class, 'create'])->name('special-repair.create');
+        Route::post('/special-repair', [SpecialDiesRepairController::class, 'store'])->name('special-repair.store');
+        Route::get('/special-repair/{specialRepair}', [SpecialDiesRepairController::class, 'show'])->name('special-repair.show');
+        Route::delete('/special-repair/{specialRepair}', [SpecialDiesRepairController::class, 'destroy'])->name('special-repair.destroy');
+
+        // Workflow actions
+        Route::post('/special-repair/{specialRepair}/approve', [SpecialDiesRepairController::class, 'approve'])->name('special-repair.approve');
+        Route::post('/special-repair/{specialRepair}/start', [SpecialDiesRepairController::class, 'startRepair'])->name('special-repair.start');
+        Route::post('/special-repair/{specialRepair}/complete', [SpecialDiesRepairController::class, 'completeRepair'])->name('special-repair.complete');
+        Route::post('/special-repair/{specialRepair}/reject', [SpecialDiesRepairController::class, 'reject'])->name('special-repair.reject');
+
+        // Special scenarios
+        Route::post('/special-repair/urgent-delivery', [SpecialDiesRepairController::class, 'handleUrgentDelivery'])->name('special-repair.urgent-delivery');
+        Route::post('/special-repair/severe-damage', [SpecialDiesRepairController::class, 'handleSevereDamage'])->name('special-repair.severe-damage');
+    });
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

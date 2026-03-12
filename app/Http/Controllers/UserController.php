@@ -27,7 +27,7 @@ class UserController extends Controller
             ->when($roleFilter, function ($query, $role) {
                 $query->where('role', $role);
             })
-            ->orderBy('name')
+            ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString();
 
@@ -58,14 +58,13 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'nik' => 'required|string|max:20|unique:users,nik',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => 'required|string|in:' . implode(',', array_keys(User::ROLES)),
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_active' => 'boolean',
         ]);
-
-        // Handle photo upload
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('photos/users', 'public');
         }
@@ -97,6 +96,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'nik' => 'required|string|max:20|unique:users,nik,' . $user->id,
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'role' => 'required|string|in:' . implode(',', array_keys(User::ROLES)),

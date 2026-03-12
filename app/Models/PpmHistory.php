@@ -14,6 +14,8 @@ class PpmHistory extends Model
         'ppm_date',
         'stroke_at_ppm',
         'ppm_number',
+        'process_type',
+        'checklist_results',
         'pic',
         'status',
         'maintenance_type',
@@ -28,6 +30,7 @@ class PpmHistory extends Model
 
     protected $casts = [
         'ppm_date' => 'date:Y-m-d',
+        'checklist_results' => 'array',
     ];
 
     public function die()

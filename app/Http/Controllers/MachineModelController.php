@@ -23,7 +23,7 @@ class MachineModelController extends Controller
                     ->orWhere('name', 'like', "%{$search}%");
             })
             ->withCount('dies')
-            ->orderBy('code')
+            ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString();
 

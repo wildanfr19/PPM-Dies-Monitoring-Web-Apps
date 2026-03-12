@@ -42,10 +42,15 @@ class ProductionLogController extends Controller
      */
     public function create()
     {
+        $dies = DieModel::with(['customer:id,code', 'machineModel:id,code', 'machineModel.tonnageStandard'])
+            ->active()
+            ->get(['id', 'part_number', 'part_name', 'customer_id', 'machine_model_id', 'line', 'qty_die', 'model',
+                    'accumulation_stroke', 'lot_size', 'ppm_standard', 'control_stroke', 'stroke_at_last_ppm', 'ppm_count']);
+
+        $dies->each->append(['next_ppm_stroke', 'ppm_status', 'lot_size_value', 'standard_stroke']);
+
         return Inertia::render('Production/Create', [
-            'dies' => DieModel::with(['customer:id,code', 'machineModel:id,code'])
-                ->active()
-                ->get(['id', 'part_number', 'part_name', 'customer_id', 'machine_model_id', 'line', 'qty_die', 'model']),
+            'dies' => $dies,
         ]);
     }
 
@@ -85,7 +90,10 @@ class ProductionLogController extends Controller
      */
     public function show(ProductionLog $production)
     {
-        $production->load(['die:id,part_number,part_name,qty_die,customer_id', 'die.customer:id,code,name', 'createdBy:id,name']);
+        $production->load(['die:id,part_number,part_name,qty_die,accumulation_stroke,stroke_at_last_ppm,ppm_count,lot_size,ppm_standard,control_stroke,customer_id,machine_model_id', 'die.customer:id,code,name', 'die.machineModel:id,tonnage_standard_id', 'die.machineModel.tonnageStandard', 'createdBy:id,name']);
+        if ($production->die) {
+            $production->die->append(['next_ppm_stroke', 'ppm_status', 'lot_size_value', 'standard_stroke']);
+        }
 
         return Inertia::render('Production/Show', [
             'log' => $production,
@@ -99,11 +107,16 @@ class ProductionLogController extends Controller
     {
         $production->load(['die']);
 
+        $dies = DieModel::with(['customer:id,code', 'machineModel:id,code', 'machineModel.tonnageStandard'])
+            ->active()
+            ->get(['id', 'part_number', 'part_name', 'customer_id', 'machine_model_id', 'line', 'qty_die',
+                    'accumulation_stroke', 'lot_size', 'ppm_standard', 'control_stroke', 'stroke_at_last_ppm', 'ppm_count']);
+
+        $dies->each->append(['next_ppm_stroke', 'ppm_status', 'lot_size_value', 'standard_stroke']);
+
         return Inertia::render('Production/Edit', [
             'log' => $production,
-            'dies' => DieModel::with(['customer:id,code', 'machineModel:id,code'])
-                ->active()
-                ->get(['id', 'part_number', 'part_name', 'customer_id', 'machine_model_id', 'line', 'qty_die']),
+            'dies' => $dies,
         ]);
     }
 
@@ -144,7 +157,12 @@ class ProductionLogController extends Controller
         if ($difference !== 0) {
             $die = DieModel::find($validated['die_id']);
             if ($die) {
+                $die->load(['machineModel.tonnageStandard', 'customer']);
+                $previousStatus = $die->ppm_status;
                 $die->increment('accumulation_stroke', $difference);
+                $die->refresh();
+                $newStatus = $die->ppm_status;
+                $this->monitoringService->triggerAlertIfChanged($die, $previousStatus, $newStatus);
             }
         }
 

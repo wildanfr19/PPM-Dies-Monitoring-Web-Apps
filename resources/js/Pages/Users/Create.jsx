@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 export default function UserCreate({ auth, roles }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
+        nik: '',
         email: '',
         password: '',
         password_confirmation: '',
@@ -141,6 +142,34 @@ export default function UserCreate({ auth, roles }) {
                                 )}
                             </div>
 
+                            {/* NIK */}
+                            <div>
+                                <label htmlFor="nik" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    NIK / ID Karyawan <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="nik"
+                                    type="text"
+                                    value={data.nik}
+                                    onChange={(e) => {
+                                        let val = e.target.value.replace(/[^0-9.]/g, '');
+                                        const digits = val.replace(/\./g, '');
+                                        if (digits.length <= 3) val = digits;
+                                        else if (digits.length <= 5) val = digits.slice(0, 3) + '.' + digits.slice(3);
+                                        else val = digits.slice(0, 3) + '.' + digits.slice(3, 5) + '.' + digits.slice(5, 7);
+                                        setData('nik', val);
+                                    }}
+                                    placeholder="000.00.00"
+                                    maxLength={9}
+                                    className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    required
+                                />
+                                {errors.nik && (
+                                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.nik}</p>
+                                )}
+                                <p className="mt-1 text-xs text-gray-500">Format: 000.00.00</p>
+                            </div>
+
                             {/* Email */}
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -212,7 +241,7 @@ export default function UserCreate({ auth, roles }) {
                                     <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.role}</p>
                                 )}
                                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Admin: Full access | Mtn Dies: Manage dies & PPM | Production: View & log production
+                                    Admin: Full access | Mtn Dies: Manage dies & PPM | PPIC: Schedule & alerts | Production: View & log production
                                 </p>
                             </div>
 

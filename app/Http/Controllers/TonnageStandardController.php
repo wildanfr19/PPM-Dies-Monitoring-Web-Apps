@@ -14,7 +14,7 @@ class TonnageStandardController extends Controller
     public function index()
     {
         $tonnageStandards = TonnageStandard::withCount('machineModels')
-            ->orderBy('tonnage')
+            ->orderByDesc('created_at')
             ->get()
             ->map(function ($ts) {
                 return [

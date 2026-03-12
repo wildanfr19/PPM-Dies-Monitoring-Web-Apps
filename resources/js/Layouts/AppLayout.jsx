@@ -1,15 +1,42 @@
-import { useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { Link, usePage, router } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
 import NotificationBell from '@/Components/NotificationBell';
 import useFlashMessages from '@/Hooks/useFlashMessages';
+import NProgress from 'nprogress';
+import 'nprogress/nprogress.css';
+
+// Configure NProgress
+NProgress.configure({ showSpinner: false, speed: 300, minimum: 0.1 });
 
 export default function AppLayout({ user, header, children }) {
     const { url } = usePage();
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Handle flash messages with SweetAlert
     useFlashMessages();
+
+    // Global loading indicator on page navigation
+    useEffect(() => {
+        const startHandler = router.on('start', () => NProgress.start());
+        const finishHandler = router.on('finish', () => NProgress.done());
+        return () => {
+            startHandler();
+            finishHandler();
+        };
+    }, []);
+
+    // Role display labels
+    const roleLabels = {
+        admin: 'Admin',
+        mtn_dies: 'MTN Dies',
+        production: 'Production',
+        ppic: 'PPIC',
+        pe: 'PE',
+        md: 'MD',
+        mgr_gm: 'Mgr/GM',
+    };
 
     // Role-based access control
     const isAdmin = user.role === 'admin';
@@ -18,15 +45,17 @@ export default function AppLayout({ user, header, children }) {
     const isMd = user.role === 'md';
     const isMgrGm = user.role === 'mgr_gm';
     const isPe = user.role === 'pe';
+    const isPpic = user.role === 'ppic';
 
     // Navigation items with role restrictions
     const allNavigation = [
-        { name: 'Dashboard', href: route('dashboard'), icon: 'fa-chart-pie', current: url === '/dashboard', roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm'] },
-        { name: 'Dies List', href: route('dies.index'), icon: 'fa-wrench', current: url.startsWith('/dies'), roles: ['admin', 'mtn_dies', 'md', 'mgr_gm'] },
-        { name: 'Schedule Calendar', href: route('schedule.index'), icon: 'fa-calendar-alt', current: url.startsWith('/schedule'), roles: ['admin', 'mtn_dies'] },
+        { name: 'Dashboard', href: route('dashboard'), icon: 'fa-chart-pie', current: url === '/dashboard', roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm', 'ppic'] },
+        { name: 'Dies List', href: route('dies.index'), icon: 'fa-wrench', current: url.startsWith('/dies'), roles: ['admin', 'mtn_dies', 'md', 'mgr_gm', 'ppic', 'production', 'pe'] },
+        { name: 'Schedule Calendar', href: route('schedule.index'), icon: 'fa-calendar-alt', current: url.startsWith('/schedule'), roles: ['admin', 'mtn_dies', 'ppic'] },
         { name: 'Production Result', href: route('production.index'), icon: 'fa-cogs', current: url.startsWith('/production'), roles: ['admin', 'mtn_dies', 'production', 'pe'] },
-        { name: 'Import / Export', href: route('import.index'), icon: 'fa-file-import', current: url.startsWith('/import'), roles: ['admin', 'mtn_dies', 'production'] },
-        { name: 'Reports', href: route('reports.index'), icon: 'fa-chart-line', current: url.startsWith('/reports'), roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm'] },
+        { name: 'Special Repair', href: route('special-repair.index'), icon: 'fa-tools', current: url.startsWith('/special-repair'), roles: ['admin', 'mtn_dies', 'production'] },
+        { name: 'Import / Export', href: route('import.index'), icon: 'fa-file-import', current: url.startsWith('/import'), roles: ['admin', 'mtn_dies', 'production', 'pe'] },
+        { name: 'Reports', href: route('reports.index'), icon: 'fa-chart-line', current: url.startsWith('/reports'), roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm', 'ppic'] },
     ];
 
     // Filter navigation based on user role
@@ -45,19 +74,38 @@ export default function AppLayout({ user, header, children }) {
     ] : [];
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
+        <div className="h-screen bg-gray-100 dark:bg-gray-900 flex overflow-hidden">
+            {/* Mobile overlay */}
+            {mobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 transition-all duration-300 flex flex-col`}>
+            <aside className={`${
+                mobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'
+            } ${sidebarOpen ? 'md:w-64' : 'md:w-20'} fixed md:static z-50 h-full bg-gray-900 transition-all duration-300 flex flex-col shrink-0`}>
                 {/* Logo */}
                 <div className="flex items-center justify-between h-16 px-4 bg-gray-800">
                     {sidebarOpen && (
-                        <span className="text-white text-lg font-bold">🏭 PPM Dies Monitoring</span>
+                        <span className="text-white text-lg font-bold">🏭 PPM Dies</span>
                     )}
                     <button
-                        onClick={() => setSidebarOpen(! sidebarOpen)}
-                        className="text-gray-400 hover:text-white"
+                        onClick={() => {
+                            setSidebarOpen(!sidebarOpen);
+                            if (mobileMenuOpen) setMobileMenuOpen(false);
+                        }}
+                        className="text-gray-400 hover:text-white hidden md:block"
                     >
                         {sidebarOpen ? '◀' : '▶'}
+                    </button>
+                    <button
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-gray-400 hover:text-white md:hidden"
+                    >
+                        ✕
                     </button>
                 </div>
 
@@ -122,10 +170,17 @@ export default function AppLayout({ user, header, children }) {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-w-0">
                 {/* Top Navbar */}
-                <header className="bg-white dark:bg-gray-800 shadow h-16 flex items-center justify-between px-6">
-                    <div>
+                <header className="bg-white dark:bg-gray-800 shadow h-16 flex items-center justify-between px-6 shrink-0">
+                    <div className="flex items-center gap-3">
+                        {/* Mobile hamburger */}
+                        <button
+                            onClick={() => setMobileMenuOpen(true)}
+                            className="text-gray-500 hover:text-gray-700 md:hidden"
+                        >
+                            <i className="fas fa-bars text-lg"></i>
+                        </button>
                         {header}
                     </div>
                     <div className="flex items-center gap-4">
@@ -147,7 +202,12 @@ export default function AppLayout({ user, header, children }) {
                                             {user.name.charAt(0).toUpperCase()}
                                         </span>
                                     )}
-                                    <span className="hidden md:block">{user.name}</span>
+                                    <div className="hidden md:flex md:flex-col md:items-start">
+                                        <span className="text-sm">{user.name}</span>
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-semibold uppercase leading-none">
+                                            {roleLabels[user.role] || user.role}
+                                        </span>
+                                    </div>
                                     <span>▼</span>
                                 </button>
                             </Dropdown.Trigger>

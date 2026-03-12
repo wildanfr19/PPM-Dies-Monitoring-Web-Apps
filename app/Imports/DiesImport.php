@@ -53,14 +53,13 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
         $existingDie = DieModel::where('part_number', $row['part_number'])->first();
 
         if ($existingDie) {
-            // Update existing die
+            // Update existing die (accumulation_stroke NOT imported — computed from production logs)
             $existingDie->update([
                 'part_name' => $row['part_name'] ?? $existingDie->part_name,
                 'machine_model_id' => $model->id,
                 'customer_id' => $customer->id,
                 'qty_die' => (int) ($row['total_die'] ?? $existingDie->qty_die),
                 'line' => $row['line'] ?? $existingDie->line,
-                'accumulation_stroke' => (int) ($row['accumulation_stroke'] ?? $existingDie->accumulation_stroke),
                 'last_stroke' => (int) ($row['last_stroke'] ?? $existingDie->last_stroke),
                 'control_stroke' => ! empty($row['control_stroke']) ? (int) $row['control_stroke'] : null,
                 'last_ppm_date' => $this->parseDate($row['last_ppm_date'] ?? null),
@@ -73,6 +72,7 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
 
         $this->importedCount++;
 
+        // accumulation_stroke starts at 0 — computed from production logs only
         return new DieModel([
             'part_number' => $row['part_number'],
             'part_name' => $row['part_name'] ?? 'Unknown',
@@ -80,7 +80,7 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
             'customer_id' => $customer->id,
             'qty_die' => (int) ($row['total_die'] ?? 1),
             'line' => $row['line'] ?? null,
-            'accumulation_stroke' => (int) ($row['accumulation_stroke'] ?? 0),
+            'accumulation_stroke' => 0,
             'last_stroke' => (int) ($row['last_stroke'] ?? 0),
             'control_stroke' => ! empty($row['control_stroke']) ? (int) $row['control_stroke'] : null,
             'last_ppm_date' => $this->parseDate($row['last_ppm_date'] ?? null),

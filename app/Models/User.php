@@ -20,6 +20,7 @@ class User extends Authenticatable
     const ROLE_MTN_DIES = 'mtn_dies';   // Maintenance Dies - Upload data & PPM processing
     const ROLE_MGR_GM = 'mgr_gm';       // Manager/General Manager - Receive alerts
     const ROLE_MD = 'md';               // Managing Director - Receive alerts
+    const ROLE_PPIC = 'ppic';           // PPIC - Create date last of LOT, receive alerts
     const ROLE_PRODUCTION = 'production';
 
     const ROLES = [
@@ -28,6 +29,7 @@ class User extends Authenticatable
         self::ROLE_MTN_DIES => 'Maintenance Dies',
         self::ROLE_MGR_GM => 'Manager/GM',
         self::ROLE_MD => 'Managing Director',
+        self::ROLE_PPIC => 'PPIC',
         self::ROLE_PRODUCTION => 'Production',
     ];
 
@@ -38,6 +40,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'nik',
         'email',
         'password',
         'role',
@@ -136,6 +139,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is PPIC.
+     */
+    public function isPpic(): bool
+    {
+        return $this->role === self::ROLE_PPIC;
+    }
+
+    /**
      * Check if user is production.
      */
     public function isProduction(): bool
@@ -144,7 +155,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user should receive alerts (MGR/GM, MD, Admin).
+     * Check if user should receive alerts (MGR/GM, MD, Admin, PPIC, PROD).
      */
     public function shouldReceiveAlerts(): bool
     {
@@ -152,6 +163,8 @@ class User extends Authenticatable
             self::ROLE_ADMIN,
             self::ROLE_MGR_GM,
             self::ROLE_MD,
+            self::ROLE_PPIC,
+            self::ROLE_PRODUCTION,
         ]);
     }
 
@@ -164,7 +177,9 @@ class User extends Authenticatable
             self::ROLE_ADMIN,
             self::ROLE_MGR_GM,
             self::ROLE_MD,
-            self::ROLE_MTN_DIES, // MTN Dies juga perlu tahu untuk PPM Processing
+            self::ROLE_MTN_DIES,  // MTN Dies - PPM Processing
+            self::ROLE_PPIC,      // PPIC - Create date last of LOT
+            self::ROLE_PRODUCTION, // PROD - Transfer dies to MTN Dies
         ]);
     }
 }

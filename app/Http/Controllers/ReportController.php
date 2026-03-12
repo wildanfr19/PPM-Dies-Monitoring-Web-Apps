@@ -124,8 +124,8 @@ class ReportController extends Controller
             'date_to' => 'nullable|date',
         ]);
 
-        $dateFrom = $request->date_from ? Carbon::parse($request->date_from) : now()->subMonth();
-        $dateTo = $request->date_to ? Carbon::parse($request->date_to) : now();
+        $dateFrom = $request->date_from ? Carbon::parse($request->date_from) : null;
+        $dateTo = $request->date_to ? Carbon::parse($request->date_to) : null;
 
         return Excel::download(
             new ProductionReportExport($dateFrom, $dateTo, $request->die_id),

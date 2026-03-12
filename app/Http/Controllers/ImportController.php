@@ -74,23 +74,35 @@ class ImportController extends Controller
 
             $imported = $import->getImportedCount();
             $skipped = $import->getSkippedRows();
+            $successRows = $import->getSuccessRows();
+            $accumulated = $import->getAccumulatedCount();
+            $accumulatedRows = $import->getAccumulatedRows();
             $errors = $import->errors();
 
-            $message = "Successfully imported {$imported} production logs. ";
+            $message = "Berhasil import {$imported} data production log.";
 
-            if (count($skipped) > 0) {
-                $message .= " " . count($skipped) . " rows were skipped.";
+            if ($accumulated > 0) {
+                $message .= " {$accumulated} data diakumulasi (part number, tanggal & shift sama).";
             }
 
-            return redirect()->route('import.index')->with('success', $message)->with('importDetails', [
+            if (count($skipped) > 0) {
+                $message .= " " . count($skipped) . " baris dilewati.";
+            }
+
+            return redirect()->route('import.index')->with('success', $message)->with('importResult', [
+                'type' => 'production',
                 'imported' => $imported,
-                'skipped' => $skipped,
-                'errors' => $errors->toArray(),
+                'skipped_count' => count($skipped),
+                'accumulated_count' => $accumulated,
+                'success_rows' => $successRows,
+                'skipped_rows' => $skipped,
+                'accumulated_rows' => $accumulatedRows,
+                'error_count' => $errors->count(),
             ]);
 
         } catch (\Exception $e) {
             return redirect()->route('import.index')
-                ->with('error', 'Import failed: ' . $e->getMessage());
+                ->with('error', 'Import gagal: ' . $e->getMessage());
         }
     }
 

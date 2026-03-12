@@ -6,6 +6,7 @@ use App\Models\DieModel;
 use App\Models\ProductionLog;
 use App\Models\PpmHistory;
 use App\Models\Customer;
+use App\Models\SpecialDiesRepair;
 use App\Services\DieMonitoringService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -31,11 +32,32 @@ class DashboardController extends Controller
         $chartData = [
             'statusDistribution' => $this->getStatusDistributionData($stats),
             'diesByTonnage' => $this->getDiesByTonnageChartData($diesByTonnage),
-            'productionTrend' => $this->getProductionTrendData(),
+            'topDiesByGroup' => $this->getTopDiesByGroupData(),
             'topDiesByStroke' => $this->getTopDiesByStrokeData(),
             'monthlyPpmCount' => $this->getMonthlyPpmCountData(),
             'customerDistribution' => $this->getCustomerDistributionData(),
         ];
+
+        // PPM Timeline Tracking Table (RED alert max 1 week = 5 days)
+        $ppmTimeline = $this->getPpmTimelineData();
+
+        // Active Special Repairs
+        $activeSpecialRepairs = SpecialDiesRepair::with(['die.customer'])
+            ->active()
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get()
+            ->map(fn($r) => [
+                'id' => $r->id,
+                'part_number' => $r->die?->part_number,
+                'repair_type_label' => $r->repair_type_label,
+                'priority' => $r->priority,
+                'priority_color' => $r->priority_color,
+                'status_label' => $r->status_label,
+                'status_color' => $r->status_color,
+                'requested_at' => $r->requested_at?->format('d-M-Y'),
+                'delivery_deadline' => $r->delivery_deadline?->format('d-M-Y'),
+            ]);
 
         return Inertia::render('Dashboard', [
             'stats' => $stats,
@@ -43,6 +65,8 @@ class DashboardController extends Controller
             'criticalDies' => $criticalDies,
             'upcomingPpm' => $upcomingPpm,
             'chartData' => $chartData,
+            'ppmTimeline' => $ppmTimeline,
+            'activeSpecialRepairs' => $activeSpecialRepairs,
         ]);
     }
 
@@ -83,39 +107,61 @@ class DashboardController extends Controller
     }
 
     /**
-     * Production trend for last 30 days
+     * TOP 10 dies by stroke progress, grouped by A1, A2, B1, B2
+     * Groups are based on lot position in the 4-lot PPM cycle:
+     * A1 = Lot 1 (0-25%), A2 = Lot 2 (25-50%), B1 = Lot 3 (50-75% / Orange), B2 = Lot 4 (75-100% / Red)
      */
-    protected function getProductionTrendData(): array
+    protected function getTopDiesByGroupData(): array
     {
-        $days = 30;
-        $startDate = now()->subDays($days);
-
-        $production = ProductionLog::select(
-                DB::raw('DATE(production_date) as date'),
-                DB:: raw('SUM(output_qty) as total_output')
-            )
-            ->where('production_date', '>=', $startDate)
-            ->groupBy('date')
-            ->orderBy('date')
+        $dies = DieModel::with(['machineModel.tonnageStandard', 'customer'])
+            ->active()
             ->get();
 
-        $labels = [];
-        $values = [];
+        $groups = [
+            'A1' => ['label' => 'A1 (Lot 1 - Safe)', 'color' => '#22c55e', 'dies' => []],
+            'A2' => ['label' => 'A2 (Lot 2 - Normal)', 'color' => '#3b82f6', 'dies' => []],
+            'B1' => ['label' => 'B1 (Lot 3 - Warning)', 'color' => '#f97316', 'dies' => []],
+            'B2' => ['label' => 'B2 (Lot 4 - Critical)', 'color' => '#ef4444', 'dies' => []],
+        ];
 
-        // Fill all days
-        for ($i = $days; $i >= 0; $i--) {
-            $date = now()->subDays($i)->format('Y-m-d');
-            $labels[] = now()->subDays($i)->format('d M');
+        foreach ($dies as $die) {
+            $currentLot = $die->current_lot;
+            $lotInCycle = (($currentLot - 1) % 4) + 1; // Position within current 4-lot cycle
 
-            $found = $production->firstWhere('date', $date);
-            $values[] = $found ? (int) $found->total_output : 0;
+            $group = match (true) {
+                $die->ppm_status === 'red' => 'B2',
+                $die->ppm_status === 'orange' => 'B1',
+                $lotInCycle <= 1 => 'A1',
+                $lotInCycle <= 2 => 'A2',
+                $lotInCycle <= 3 => 'B1',
+                default => 'B2',
+            };
+
+            // Override with explicit die_group if set
+            if ($die->die_group && isset($groups[$die->die_group])) {
+                $group = $die->die_group;
+            }
+
+            $groups[$group]['dies'][] = [
+                'id' => $die->id,
+                'part_number' => $die->part_number,
+                'customer' => $die->customer?->code,
+                'stroke_percentage' => $die->stroke_percentage,
+                'accumulation_stroke' => $die->accumulation_stroke,
+                'standard_stroke' => $die->standard_stroke,
+                'current_lot' => $currentLot,
+                'ppm_status' => $die->ppm_status,
+            ];
         }
 
-        return [
-            'labels' => $labels,
-            'values' => $values,
-            'datasetLabel' => 'Daily Production Output',
-        ];
+        // Sort each group by stroke percentage descending and take top 10
+        foreach ($groups as $key => &$group) {
+            usort($group['dies'], fn($a, $b) => $b['stroke_percentage'] <=> $a['stroke_percentage']);
+            $group['dies'] = array_slice($group['dies'], 0, 10);
+            $group['count'] = count($group['dies']);
+        }
+
+        return $groups;
     }
 
     /**
@@ -192,5 +238,83 @@ class DashboardController extends Controller
             'labels' => $customers->pluck('code')->toArray(),
             'values' => $customers->pluck('dies_count')->toArray(),
         ];
+    }
+
+    /**
+     * PPM Timeline Data - Track RED alert to completion (max 5 days)
+     *
+     * Timeline:
+     * n   = RED alert triggered
+     * n+1 = PROD transfers dies to MTN (max 1 day)
+     * n+3 = PPM activity completed (max 3 days from transfer)
+     * n+4 = PPM finish & transfer back to production (max 4 days from RED)
+     * Total max = 5 working days (1 week)
+     */
+    protected function getPpmTimelineData(): array
+    {
+        $dies = DieModel::with(['machineModel.tonnageStandard', 'customer'])
+            ->active()
+            ->whereNotNull('ppm_alert_status')
+            ->whereIn('ppm_alert_status', [
+                'red_alerted', 'transferred_to_mtn', 'ppm_scheduled',
+                'schedule_approved', 'ppm_in_progress', 'additional_repair',
+                'ppm_completed', 'special_repair',
+            ])
+            ->get();
+
+        $timeline = [];
+
+        foreach ($dies as $die) {
+            $redAlertedAt = $die->red_alerted_at;
+            $now = now();
+
+            // Calculate days since RED alert
+            $daysSinceRed = $redAlertedAt ? (int) $redAlertedAt->diffInWeekdays($now) : null;
+
+            // Check SLA compliance
+            $transferSla = null; // max n+1
+            $ppmActivitySla = null; // max n+3
+            $ppmFinishSla = null; // max n+4
+            $totalSla = null; // max 5 days
+
+            if ($redAlertedAt) {
+                $transferDays = $die->transferred_at
+                    ? (int) $redAlertedAt->diffInWeekdays($die->transferred_at)
+                    : null;
+                $transferSla = $transferDays !== null ? ($transferDays <= 1 ? 'on_track' : 'overdue') : 'pending';
+
+                $ppmDays = $die->ppm_started_at
+                    ? (int) $redAlertedAt->diffInWeekdays($die->ppm_started_at)
+                    : null;
+
+                $finishDays = $die->ppm_finished_at
+                    ? (int) $redAlertedAt->diffInWeekdays($die->ppm_finished_at)
+                    : null;
+                $ppmFinishSla = $finishDays !== null ? ($finishDays <= 4 ? 'on_track' : 'overdue') : 'pending';
+
+                $totalSla = $daysSinceRed !== null ? ($daysSinceRed <= 5 ? 'on_track' : 'overdue') : 'pending';
+            }
+
+            $timeline[] = [
+                'id' => $die->id,
+                'part_number' => $die->part_number,
+                'customer' => $die->customer?->code,
+                'ppm_alert_status' => $die->ppm_alert_status,
+                'ppm_alert_status_label' => $die->ppm_alert_status_label,
+                'red_alerted_at' => $redAlertedAt?->format('d-M-Y H:i'),
+                'transferred_at' => $die->transferred_at?->format('d-M-Y H:i'),
+                'ppm_started_at' => $die->ppm_started_at?->format('d-M-Y H:i'),
+                'ppm_finished_at' => $die->ppm_finished_at?->format('d-M-Y H:i'),
+                'returned_to_production_at' => $die->returned_to_production_at?->format('d-M-Y H:i'),
+                'days_since_red' => $daysSinceRed,
+                'ppm_total_days' => $die->ppm_total_days,
+                'transfer_sla' => $transferSla,
+                'ppm_finish_sla' => $ppmFinishSla,
+                'total_sla' => $totalSla,
+                'is_overdue' => $daysSinceRed !== null && $daysSinceRed > 5,
+            ];
+        }
+
+        return $timeline;
     }
 }

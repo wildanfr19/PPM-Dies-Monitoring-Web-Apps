@@ -60,7 +60,7 @@ class PpmCompleted extends Notification
             'pic' => $this->ppmHistory->pic,
             'maintenance_type' => $this->ppmHistory->maintenance_type,
             'stroke_at_ppm' => $this->ppmHistory->stroke_at_ppm,
-            'message' => "✅ PPM completed for {$this->die->part_number} by {$this->ppmHistory->pic}",
+            'message' => "✅ PPM completed for {$this->die->part_number} ({$this->die->part_name}) by {$this->ppmHistory->pic}",
             'icon' => 'fa-check-circle',
             'color' => 'green',
         ];

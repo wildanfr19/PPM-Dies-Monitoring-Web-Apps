@@ -48,6 +48,8 @@ export default function UsersIndex({ auth, users, roles, filters }) {
                 return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
             case 'production':
                 return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+            case 'ppic':
+                return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
             default:
                 return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
         }
@@ -138,6 +140,9 @@ export default function UsersIndex({ auth, users, roles, filters }) {
                                         User
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        NIK
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Email
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -154,7 +159,7 @@ export default function UsersIndex({ auth, users, roles, filters }) {
                             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 {users.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                                             No users found.
                                         </td>
                                     </tr>
@@ -185,6 +190,9 @@ export default function UsersIndex({ auth, users, roles, filters }) {
                                                         )}
                                                     </div>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700 dark:text-gray-300">
+                                                {user.nik || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                 {user.email}

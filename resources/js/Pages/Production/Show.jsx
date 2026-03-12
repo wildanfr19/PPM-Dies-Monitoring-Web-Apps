@@ -151,13 +151,42 @@ export default function ProductionShow({ auth, log }) {
                                 </div>
                             </div>
 
-                            {/* Output - Main Highlight */}
-                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
-                                <p className="text-sm text-green-600 dark:text-green-400 font-medium mb-2">Total Output / Stroke Count</p>
-                                <p className="text-4xl font-bold text-green-700 dark:text-green-300">
-                                    {log.output_qty?.toLocaleString()}
-                                </p>
-                                <p className="text-sm text-green-600 dark:text-green-400 mt-1">strokes</p>
+                            {/* Output & Accumulation Stroke */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
+                                    <p className="text-sm text-green-600 dark:text-green-400 font-medium mb-2">Total Output / Stroke Count</p>
+                                    <p className="text-4xl font-bold text-green-700 dark:text-green-300">
+                                        {log.output_qty?.toLocaleString()}
+                                    </p>
+                                    <p className="text-sm text-green-600 dark:text-green-400 mt-1">strokes</p>
+                                </div>
+                                <div className={`border rounded-lg p-6 text-center ${
+                                    log.die?.ppm_status === 'red'
+                                        ? 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-red-200 dark:border-red-800'
+                                        : log.die?.ppm_status === 'orange'
+                                        ? 'bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-orange-200 dark:border-orange-800'
+                                        : 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800'
+                                }`}>
+                                    <p className={`text-sm font-medium mb-2 ${
+                                        log.die?.ppm_status === 'red' ? 'text-red-600 dark:text-red-400'
+                                            : log.die?.ppm_status === 'orange' ? 'text-orange-600 dark:text-orange-400'
+                                            : 'text-blue-600 dark:text-blue-400'
+                                    }`}>Total Akumulasi Stroke</p>
+                                    <p className={`text-4xl font-bold ${
+                                        log.die?.ppm_status === 'red' ? 'text-red-700 dark:text-red-300'
+                                            : log.die?.ppm_status === 'orange' ? 'text-orange-700 dark:text-orange-300'
+                                            : 'text-blue-700 dark:text-blue-300'
+                                    }`}>
+                                        {log.die?.accumulation_stroke?.toLocaleString() || '-'}
+                                    </p>
+                                    <p className={`text-sm mt-1 ${
+                                        log.die?.ppm_status === 'red' ? 'text-red-600 dark:text-red-400'
+                                            : log.die?.ppm_status === 'orange' ? 'text-orange-600 dark:text-orange-400'
+                                            : 'text-blue-600 dark:text-blue-400'
+                                    }`}>
+                                        of {log.die?.standard_stroke?.toLocaleString() || '-'} standard
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Metadata */}

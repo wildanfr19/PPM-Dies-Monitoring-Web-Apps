@@ -1,10 +1,20 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ImportIndex({ auth }) {
     const { flash } = usePage().props;
     const [activeTab, setActiveTab] = useState('production');
+    const [showResultModal, setShowResultModal] = useState(false);
+    const [resultTab, setResultTab] = useState('success'); // 'success' or 'failed'
+
+    // Auto-open modal when importResult is available
+    useEffect(() => {
+        if (flash?.importResult) {
+            setShowResultModal(true);
+            setResultTab('success');
+        }
+    }, [flash?.importResult]);
 
     const productionForm = useForm({
         file: null,
@@ -81,7 +91,7 @@ export default function ImportIndex({ auth }) {
                 <div className="max-w-12xl mx-auto space-y-6">
 
                     {/* Flash Messages */}
-                    {flash?. success && (
+                    {flash?.success && !flash?.importResult && (
                         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative flex items-center gap-2">
                             <i className="fas fa-check-circle text-xl"></i>
                             <span className="block sm:inline">{flash.success}</span>
@@ -91,6 +101,27 @@ export default function ImportIndex({ auth }) {
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center gap-2">
                             <i className="fas fa-times-circle text-xl"></i>
                             <span className="block sm:inline">{flash.error}</span>
+                        </div>
+                    )}
+
+                    {/* Import Result Summary Banner */}
+                    {flash?.importResult && (
+                        <div
+                            className="bg-blue-50 border border-blue-300 text-blue-800 px-4 py-3 rounded-lg relative flex items-center justify-between cursor-pointer hover:bg-blue-100 transition"
+                            onClick={() => setShowResultModal(true)}
+                        >
+                            <div className="flex items-center gap-3">
+                                <i className="fas fa-info-circle text-xl"></i>
+                                <span>
+                                    Import selesai — <strong className="text-green-700">{flash.importResult.imported} berhasil</strong>,{' '}
+                                    {(flash.importResult.accumulated_count || 0) > 0 && (
+                                        <><strong className="text-yellow-600">{flash.importResult.accumulated_count} diakumulasi</strong>,{' '}</>
+                                    )}
+                                    <strong className="text-red-600">{flash.importResult.skipped_count} dilewati</strong>.
+                                    Klik untuk melihat detail.
+                                </span>
+                            </div>
+                            <i className="fas fa-chevron-right"></i>
                         </div>
                     )}
 
@@ -747,6 +778,246 @@ export default function ImportIndex({ auth }) {
                     </div>
                 </div>
             </div>
+
+            {/* Import Result Modal */}
+            {showResultModal && flash?.importResult && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+                        onClick={() => setShowResultModal(false)}
+                    ></div>
+
+                    {/* Modal Content */}
+                    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col z-10">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                    <i className="fas fa-file-import text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                        Hasil Import Production Log
+                                    </h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        Ringkasan hasil import data
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowResultModal(false)}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition p-1"
+                            >
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+
+                        {/* Summary Cards */}
+                        <div className="px-6 py-4 grid grid-cols-4 gap-4 border-b border-gray-200 dark:border-gray-700">
+                            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                                    {flash.importResult.imported + (flash.importResult.accumulated_count || 0) + flash.importResult.skipped_count}
+                                </div>
+                                <div className="text-xs text-blue-600 dark:text-blue-300 mt-1">Total Data</div>
+                            </div>
+                            <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                                    {flash.importResult.imported}
+                                </div>
+                                <div className="text-xs text-green-600 dark:text-green-300 mt-1">Berhasil Import</div>
+                            </div>
+                            <div className="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+                                    {flash.importResult.accumulated_count || 0}
+                                </div>
+                                <div className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">Diakumulasi</div>
+                            </div>
+                            <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-red-700 dark:text-red-400">
+                                    {flash.importResult.skipped_count}
+                                </div>
+                                <div className="text-xs text-red-600 dark:text-red-300 mt-1">Dilewati / Gagal</div>
+                            </div>
+                        </div>
+
+                        {/* Tab Buttons */}
+                        <div className="px-6 pt-3 flex gap-2">
+                            <button
+                                onClick={() => setResultTab('success')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+                                    resultTab === 'success'
+                                        ? 'bg-green-600 text-white shadow-sm'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                            >
+                                <i className="fas fa-check-circle"></i>
+                                Berhasil ({flash.importResult.imported})
+                            </button>
+                            <button
+                                onClick={() => setResultTab('accumulated')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+                                    resultTab === 'accumulated'
+                                        ? 'bg-yellow-600 text-white shadow-sm'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                            >
+                                <i className="fas fa-layer-group"></i>
+                                Diakumulasi ({flash.importResult.accumulated_count || 0})
+                            </button>
+                            <button
+                                onClick={() => setResultTab('failed')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+                                    resultTab === 'failed'
+                                        ? 'bg-red-600 text-white shadow-sm'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                            >
+                                <i className="fas fa-times-circle"></i>
+                                Dilewati ({flash.importResult.skipped_count})
+                            </button>
+                        </div>
+
+                        {/* Table Content */}
+                        <div className="px-6 py-4 overflow-auto flex-1">
+                            {resultTab === 'success' && (
+                                <>
+                                    {flash.importResult.success_rows && flash.importResult.success_rows.length > 0 ? (
+                                        <div className="overflow-x-auto rounded-lg border border-green-200 dark:border-green-800">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-green-50 dark:bg-green-900/40">
+                                                    <tr>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Row</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Part Number</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Part Name</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Tanggal</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Shift</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Line</th>
+                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Output</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-green-100 dark:divide-green-800">
+                                                    {flash.importResult.success_rows.map((row, idx) => (
+                                                        <tr key={idx} className="hover:bg-green-50 dark:hover:bg-green-900/20">
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.row_number}</td>
+                                                            <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{row.part_number}</td>
+                                                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.part_name}</td>
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.date}</td>
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.shift}</td>
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.line}</td>
+                                                            <td className="px-3 py-2 text-right font-semibold text-green-700 dark:text-green-400">{row.output?.toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 text-gray-400">
+                                            <i className="fas fa-inbox text-4xl mb-3 block"></i>
+                                            <p>Tidak ada data yang berhasil diimport</p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {resultTab === 'accumulated' && (
+                                <>
+                                    {flash.importResult.accumulated_rows && flash.importResult.accumulated_rows.length > 0 ? (
+                                        <div className="overflow-x-auto rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-yellow-50 dark:bg-yellow-900/40">
+                                                    <tr>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Row</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Part Number</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Part Name</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Tanggal</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Shift</th>
+                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Qty Lama</th>
+                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Ditambah</th>
+                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Qty Baru</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-yellow-100 dark:divide-yellow-800">
+                                                    {flash.importResult.accumulated_rows.map((row, idx) => (
+                                                        <tr key={idx} className="hover:bg-yellow-50 dark:hover:bg-yellow-900/20">
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.row_number}</td>
+                                                            <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{row.part_number}</td>
+                                                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.part_name}</td>
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.date}</td>
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.shift}</td>
+                                                            <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{row.old_qty?.toLocaleString()}</td>
+                                                            <td className="px-3 py-2 text-right font-medium text-yellow-600 dark:text-yellow-400">+{row.added_qty?.toLocaleString()}</td>
+                                                            <td className="px-3 py-2 text-right font-bold text-yellow-700 dark:text-yellow-300">{row.new_qty?.toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 text-gray-400">
+                                            <i className="fas fa-layer-group text-4xl mb-3 block"></i>
+                                            <p>Tidak ada data yang diakumulasi</p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {resultTab === 'failed' && (
+                                <>
+                                    {flash.importResult.skipped_rows && flash.importResult.skipped_rows.length > 0 ? (
+                                        <div className="overflow-x-auto rounded-lg border border-red-200 dark:border-red-800">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-red-50 dark:bg-red-900/40">
+                                                    <tr>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Row</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Part Number</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Part Name</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Tanggal</th>
+                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Output</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Alasan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-red-100 dark:divide-red-800">
+                                                    {flash.importResult.skipped_rows.map((row, idx) => (
+                                                        <tr key={idx} className="hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.row_number}</td>
+                                                            <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{row.part_number || '-'}</td>
+                                                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.part_name || '-'}</td>
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.date || '-'}</td>
+                                                            <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{row.output ?? '-'}</td>
+                                                            <td className="px-3 py-2">
+                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">
+                                                                    {row.reason}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 text-gray-400">
+                                            <i className="fas fa-check-double text-4xl mb-3 block text-green-400"></i>
+                                            <p>Semua data berhasil diimport! Tidak ada yang dilewati.</p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                            <button
+                                onClick={() => setShowResultModal(false)}
+                                className="px-5 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm font-medium"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </AppLayout>
     );
 }

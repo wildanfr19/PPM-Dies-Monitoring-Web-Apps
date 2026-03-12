@@ -39,8 +39,14 @@ export default function LotProgress({
     };
 
     const getProgressColor = () => {
+        // Color based on ppm_status passed via percentage thresholds
+        // standard_stroke - lot_size = orange, >= standard_stroke = red
         if (percentage >= 100) return 'bg-red-500';
-        if (percentage >= 75) return 'bg-orange-500';
+        // Use a simple heuristic: if lots exist, check the zones
+        const hasOrangeLot = lots.some(l => l.zone === 'orange' && (l.completed || l.current));
+        const hasRedLot = lots.some(l => l.zone === 'red' && (l.completed || l.current));
+        if (hasRedLot) return 'bg-red-500';
+        if (hasOrangeLot) return 'bg-orange-500';
         return 'bg-green-500';
     };
 

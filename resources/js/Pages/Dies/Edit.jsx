@@ -1,5 +1,6 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { PROCESS_TYPES } from '@/Utils/PpmChecklistData';
 
 export default function DieEdit({ auth, die, customers, machineModels }) {
     const { data, setData, patch, processing, errors } = useForm({
@@ -9,9 +10,11 @@ export default function DieEdit({ auth, die, customers, machineModels }) {
         customer_id: die.customer_id || '',
         qty_die: die.qty_die || 1,
         line: die.line || '',
+        process_type: die.process_type || '',
         control_stroke: die.control_stroke || '',
         location: die.location || '',
         notes: die. notes || '',
+        is_4lot_check: die.is_4lot_check || false,
     });
 
     const handleSubmit = (e) => {
@@ -133,7 +136,7 @@ export default function DieEdit({ auth, die, customers, machineModels }) {
                                 </div>
                             </div>
 
-                            {/* Line & Control Stroke */}
+                            {/* Line & Process Type */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -149,6 +152,31 @@ export default function DieEdit({ auth, die, customers, machineModels }) {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Process Type
+                                    </label>
+                                    <select
+                                        value={data.process_type}
+                                        onChange={(e) => setData('process_type', e.target.value)}
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                                    >
+                                        <option value="">-- Select Process --</option>
+                                        {PROCESS_TYPES.map((p) => (
+                                            <option key={p.value} value={p.value}>
+                                                {p.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.process_type && <p className="text-red-500 text-xs mt-1">{errors.process_type}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Determines PPM inspection checklist form
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Control Stroke */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Control Stroke (Override)
                                     </label>
                                     <input
@@ -159,6 +187,21 @@ export default function DieEdit({ auth, die, customers, machineModels }) {
                                         className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
                                     />
                                 </div>
+                                <div></div>
+                            </div>
+
+                            {/* 4-Lot Check */}
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    id="is_4lot_check"
+                                    checked={data.is_4lot_check}
+                                    onChange={(e) => setData('is_4lot_check', e.target.checked)}
+                                    className="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900"
+                                />
+                                <label htmlFor="is_4lot_check" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    4-Lot Check <span className="text-xs text-gray-500">(Reset accumulation setelah PPM/polishing)</span>
+                                </label>
                             </div>
 
                             {/* Location */}

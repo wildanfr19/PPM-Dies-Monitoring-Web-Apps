@@ -21,6 +21,7 @@ class PpmSchedule extends Model
         'ppm_date',
         'pic',
         'notes',
+        'updated_by',
     ];
 
     protected $casts = [

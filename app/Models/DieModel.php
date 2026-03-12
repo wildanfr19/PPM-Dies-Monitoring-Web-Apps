@@ -13,6 +13,19 @@ class DieModel extends Model
 
     protected $table = 'dies';
 
+    // Process types for PPM inspection checklist
+    const PROCESS_TYPES = [
+        'blank_pierce',
+        'draw',
+        'embos',
+        'trim',
+        'form',
+        'flang',
+        'restrike',
+        'pierce',
+        'cam_pierce',
+    ];
+
     protected $fillable = [
         'part_number',
         'part_name',
@@ -21,6 +34,7 @@ class DieModel extends Model
         'customer_id',
         'qty_die',
         'line',
+        'process_type',       // Process type for PPM checklist (blank_pierce, draw, etc)
         'lot_size',           // Lot size per batch (600, 5000)
         'ppm_standard',       // Standard stroke untuk PPM (6000, 5000) - mengacu pada langkah standar
         'accumulation_stroke',
@@ -31,12 +45,43 @@ class DieModel extends Model
         'last_ppm_date',
         'location',
         'status',
-        'ppm_alert_status',   // Status alert: null, 'orange_alerted', 'red_alerted', 'ppm_scheduled', 'ppm_in_progress'
+        'ppm_alert_status',   // Status alert: null, 'orange_alerted', 'red_alerted', 'lot_date_set', 'transferred_to_mtn', 'ppm_scheduled', 'ppm_in_progress'
+        'ppm_scheduled_date',
+        'ppm_scheduled_by',
+        'schedule_approved_at',
+        'schedule_approved_by',
         'notes',
+        // PPIC Feature: Last Date of LOT
+        'last_lot_date',
+        'last_lot_date_set_by',
+        // PROD Feature: Transfer Dies
+        'transferred_at',
+        'transferred_by',
+        'transfer_from_location',
+        'transfer_to_location',
+        // PPM Timeline Tracking
+        'red_alerted_at',
+        'ppm_started_at',
+        'ppm_finished_at',
+        'returned_to_production_at',
+        'ppm_total_days',
+        // Group classification
+        'die_group',
+        // Special 4-lot check flag
+        'is_4lot_check',
     ];
 
     protected $casts = [
         'last_ppm_date' => 'date:Y-m-d',
+        'last_lot_date' => 'date:Y-m-d',
+        'ppm_scheduled_date' => 'date:Y-m-d',
+        'schedule_approved_at' => 'datetime',
+        'transferred_at' => 'datetime',
+        'red_alerted_at' => 'datetime',
+        'ppm_started_at' => 'datetime',
+        'ppm_finished_at' => 'datetime',
+        'returned_to_production_at' => 'datetime',
+        'is_4lot_check' => 'boolean',
     ];
 
     // ==================== RELATIONSHIPS ====================
@@ -64,6 +109,11 @@ class DieModel extends Model
     public function ppmHistories()
     {
         return $this->hasMany(PpmHistory::class, 'die_id');
+    }
+
+    public function specialRepairs()
+    {
+        return $this->hasMany(SpecialDiesRepair::class, 'die_id');
     }
 
     // ==================== ACCESSORS ====================
@@ -107,44 +157,39 @@ class DieModel extends Model
      */
     public function getRemainingStrokesAttribute()
     {
-        return max(0, $this->next_ppm_stroke - $this->accumulation_stroke);
+        return max(0, $this->standard_stroke - $this->accumulation_stroke);
     }
 
     /**
-     * Get stroke percentage towards NEXT PPM checkpoint
+     * Get stroke percentage towards standard stroke
      */
     public function getStrokePercentageAttribute()
     {
-        $nextPpm = $this->next_ppm_stroke;
-        $lastPpm = $this->stroke_at_last_ppm ?? 0;
-        $range = $nextPpm - $lastPpm;
+        $standardStroke = $this->standard_stroke;
+        if ($standardStroke <= 0) return 100;
 
-        if ($range <= 0) return 100;
-
-        $progress = $this->accumulation_stroke - $lastPpm;
-        return round(($progress / $range) * 100, 1);
+        return round(($this->accumulation_stroke / $standardStroke) * 100, 1);
     }
 
     /**
-     * Get remaining lots until NEXT PPM checkpoint
+     * Get remaining lots until standard stroke
      */
     public function getRemainingLotsAttribute()
     {
         $lotSize = $this->lot_size_value;
         if ($lotSize <= 0) return 0;
-        return round($this->remaining_strokes / $lotSize, 2);
+        return round($this->remaining_strokes / $lotSize, 1);
     }
 
     /**
-     * Get current lot number (since last PPM)
+     * Get current lot number (absolute, based on accumulation)
      */
     public function getCurrentLotAttribute()
     {
         $lotSize = $this->lot_size_value;
         if ($lotSize <= 0) return 0;
 
-        $strokeSinceLastPpm = $this->accumulation_stroke - ($this->stroke_at_last_ppm ?? 0);
-        return floor($strokeSinceLastPpm / $lotSize) + 1;
+        return (int) floor($this->accumulation_stroke / $lotSize) + 1;
     }
 
     /**
@@ -168,8 +213,14 @@ class DieModel extends Model
         $lastPpmStroke = $this->stroke_at_last_ppm ?? 0;
         $nextCheckpoint = $lastPpmStroke + ($this->lots_per_ppm * $lotSize);
 
-        // Don't exceed standard stroke
-        return min($nextCheckpoint, $this->standard_stroke);
+        // Cap at standard_stroke only if last PPM was before standard_stroke
+        // After PPM at/past standard, next checkpoint is the full cycle from new base
+        if ($lastPpmStroke < $this->standard_stroke) {
+            return min($nextCheckpoint, $this->standard_stroke);
+        }
+
+        // Last PPM was at or past standard stroke - don't cap
+        return $nextCheckpoint;
     }
 
     /**
@@ -212,21 +263,19 @@ class DieModel extends Model
     public function getPpmStatusAttribute()
     {
         $lotSize = $this->lot_size_value;
-        if ($lotSize <= 0) return 'green';
+        $standardStroke = $this->standard_stroke;
 
-        $nextPpmStroke = $this->next_ppm_stroke;
-        $lastPpmStroke = $this->stroke_at_last_ppm ?? 0;
+        if ($lotSize <= 0 || $standardStroke <= 0) return 'green';
 
-        // Calculate thresholds based on next PPM checkpoint
-        // Orange: 1 lot before next PPM (75% of cycle)
-        $orangeThreshold = $nextPpmStroke - $lotSize;
+        // Orange threshold = standard_stroke - lot_size
+        $orangeThreshold = $standardStroke - $lotSize;
 
-        // RED: Accumulation has reached or exceeded next PPM checkpoint
-        if ($this->accumulation_stroke >= $nextPpmStroke) {
+        // RED: Accumulation has reached or exceeded standard stroke
+        if ($this->accumulation_stroke >= $standardStroke) {
             return 'red';
         }
 
-        // ORANGE: Within 1 lot of next PPM checkpoint
+        // ORANGE: Within 1 lot of standard stroke
         if ($this->accumulation_stroke >= $orangeThreshold) {
             return 'orange';
         }
@@ -241,27 +290,33 @@ class DieModel extends Model
     public function getPpmStatusLabelAttribute()
     {
         $ppmNumber = ($this->ppm_count ?? 0) + 1;
-        $nextPpmStroke = number_format($this->next_ppm_stroke);
+        $standardStroke = number_format($this->standard_stroke);
 
         return match($this->ppm_status) {
-            'red' => "🔴 CRITICAL - PPM #{$ppmNumber} Required! (at {$nextPpmStroke} strokes)",
-            'orange' => "🟠 WARNING - Approaching PPM #{$ppmNumber} (at {$nextPpmStroke} strokes)",
+            'red' => "🔴 CRITICAL - PPM #{$ppmNumber} Required! (at {$standardStroke} strokes)",
+            'orange' => "🟠 WARNING - Approaching PPM #{$ppmNumber} (at {$standardStroke} strokes)",
             'green' => '🟢 OK - Within Normal Limit',
             default => 'Unknown',
         };
-
     }
 
     /**
      * Get alert status label
+     * Per Flow PPM Dies Controlling System
      */
     public function getPpmAlertStatusLabelAttribute()
     {
         return match($this->ppm_alert_status) {
             'orange_alerted' => 'Orange Alert Sent',
-            'red_alerted' => 'Red Alert Sent - Awaiting PPM',
-            'ppm_scheduled' => 'PPM Scheduled',
-            'ppm_in_progress' => 'PPM In Progress',
+            'lot_date_set' => 'PPIC: Last LOT Date Set',
+            'ppm_scheduled' => 'MTN Dies: PPM Scheduled',
+            'schedule_approved' => 'PPIC: Schedule Approved',
+            'red_alerted' => 'Red Alert Sent - Awaiting Transfer',
+            'transferred_to_mtn' => 'PROD: Dies Transferred to MTN',
+            'ppm_in_progress' => 'MTN Dies: PPM In Progress',
+            'additional_repair' => 'MTN Dies: Additional Repair Needed',
+            'ppm_completed' => 'PPM Completed - Awaiting Transfer Back',
+            'special_repair' => 'Special Repair In Progress',
             default => null,
         };
     }
@@ -278,20 +333,10 @@ class DieModel extends Model
         $nextPpmStroke = $this->next_ppm_stroke;
         $standardStroke = $this->standard_stroke;
 
-        // Jika next PPM = standard stroke, berarti ini adalah PPM terakhir (kondisi 1 & 2 bertemu)
-        if ($nextPpmStroke >= $standardStroke) {
-            return [
-                'type' => 'both',
-                'label' => 'Condition 1 & 2',
-                'description' => 'Standard Stroke & 4-Lot Checkpoint',
-            ];
-        }
-
-        // Kondisi 2: PPM karena 4 lot checkpoint
         return [
-            'type' => 'condition_2',
-            'label' => 'Condition 2',
-            'description' => '4-Lot Checkpoint',
+            'type' => 'standard',
+            'label' => 'Standard Stroke',
+            'description' => 'PPM at standard stroke limit',
         ];
     }
 
@@ -303,34 +348,33 @@ class DieModel extends Model
     {
         $lotSize = $this->lot_size_value;
         $standardStroke = $this->standard_stroke;
-        $nextPpmStroke = $this->next_ppm_stroke;
         $accumulation = $this->accumulation_stroke;
         $ppmCount = $this->ppm_count ?? 0;
 
-        // Kondisi 1: Target Standard Stroke
+        // Kondisi 1: Target Standard Stroke (Red / PPM Required)
         $condition1 = [
-            'name' => 'Condition 1',
+            'name' => 'PPM Target',
             'description' => 'Standard Stroke',
             'target' => $standardStroke,
             'remaining' => max(0, $standardStroke - $accumulation),
             'percentage' => $standardStroke > 0 ? round(($accumulation / $standardStroke) * 100, 1) : 0,
-            'is_active' => $nextPpmStroke >= $standardStroke,
+            'is_active' => true,
         ];
 
-        // Kondisi 2: Target setiap 4 lot
+        // Kondisi 2: Warning Threshold (Orange = standard_stroke - lot_size)
+        $orangeThreshold = $standardStroke - $lotSize;
         $condition2 = [
-            'name' => 'Condition 2',
-            'description' => '4-Lot Checkpoint (PPM #' . ($ppmCount + 1) . ')',
-            'target' => $nextPpmStroke,
-            'remaining' => max(0, $nextPpmStroke - $accumulation),
-            'percentage' => $this->stroke_percentage,
-            'is_active' => $nextPpmStroke < $standardStroke,
+            'name' => 'Warning Threshold',
+            'description' => 'Orange alert at ' . number_format($orangeThreshold) . ' strokes',
+            'target' => $orangeThreshold,
+            'remaining' => max(0, $orangeThreshold - $accumulation),
+            'percentage' => $orangeThreshold > 0 ? round(($accumulation / $orangeThreshold) * 100, 1) : 0,
+            'is_active' => $accumulation >= $orangeThreshold,
         ];
 
         return [
             'condition_1' => $condition1,
             'condition_2' => $condition2,
-            'next_trigger' => $nextPpmStroke < $standardStroke ? 'condition_2' : 'condition_1',
         ];
     }
 

@@ -1,5 +1,6 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useMemo } from 'react';
 
 export default function ProductionEdit({ auth, log, dies }) {
     const { data, setData, put, processing, errors } = useForm({
@@ -20,6 +21,50 @@ export default function ProductionEdit({ auth, log, dies }) {
     // Get selected die info
     const selectedDie = dies?.find(d => d.id === parseInt(data.die_id));
 
+    // Calculate alert proximity guidance
+    const alertGuidance = useMemo(() => {
+        if (!selectedDie) return null;
+
+        const originalOutput = log.output_qty || 0;
+        const newOutput = parseInt(data.output_qty) || 0;
+        const baseAccum = selectedDie.accumulation_stroke - originalOutput;
+        const effectiveAccum = baseAccum + newOutput;
+
+        const standardStroke = selectedDie.standard_stroke;
+        const lotSize = selectedDie.lot_size_value;
+        const orangeThreshold = standardStroke - lotSize;
+
+        // Current status (with current accumulation)
+        const currentAccum = selectedDie.accumulation_stroke;
+        const currentStatus = currentAccum >= standardStroke ? 'red' : currentAccum >= orangeThreshold ? 'orange' : 'green';
+
+        // Predicted status (with new output)
+        const predictedStatus = effectiveAccum >= standardStroke ? 'red' : effectiveAccum >= orangeThreshold ? 'orange' : 'green';
+
+        // How much output to reach orange/red from base
+        const outputToOrange = Math.max(0, orangeThreshold - baseAccum);
+        const outputToRed = Math.max(0, standardStroke - baseAccum);
+
+        // Remaining from current input
+        const remainingToOrange = Math.max(0, orangeThreshold - effectiveAccum);
+        const remainingToRed = Math.max(0, standardStroke - effectiveAccum);
+
+        return {
+            baseAccum,
+            effectiveAccum,
+            standardStroke,
+            lotSize,
+            orangeThreshold,
+            currentStatus,
+            predictedStatus,
+            statusChanged: currentStatus !== predictedStatus,
+            outputToOrange,
+            outputToRed,
+            remainingToOrange,
+            remainingToRed,
+        };
+    }, [selectedDie, data.output_qty, log.output_qty]);
+
     const handleSubmit = (e) => {
         e.preventDefault();
         put(route('production.update', log.id));
@@ -36,19 +81,35 @@ export default function ProductionEdit({ auth, log, dies }) {
 
     // Calculate total hours when times change
     const calculateTotalTime = (start, finish) => {
-        if (start && finish) {
-            const startDate = new Date(`2000-01-01T${start}`);
-            const finishDate = new Date(`2000-01-01T${finish}`);
-            let diff = (finishDate - startDate) / 1000 / 60; // in minutes
-            if (diff < 0) diff += 24 * 60; // handle overnight shifts
-            setData(prev => ({
+        setData(prev => {
+            const nextData = {
                 ...prev,
                 start_time: start,
                 finish_time: finish,
+            };
+
+            if (!start || !finish) {
+                return {
+                    ...nextData,
+                    total_hours: '',
+                    total_minutes: '',
+                };
+            }
+
+            const startDate = new Date(`2000-01-01T${start}`);
+            const finishDate = new Date(`2000-01-01T${finish}`);
+            let diff = (finishDate - startDate) / 1000 / 60; // in minutes
+
+            if (diff < 0) {
+                diff += 24 * 60; // handle overnight shifts
+            }
+
+            return {
+                ...nextData,
                 total_hours: (diff / 60).toFixed(2),
                 total_minutes: Math.round(diff),
-            }));
-        }
+            };
+        });
     };
 
     return (
@@ -172,6 +233,22 @@ export default function ProductionEdit({ auth, log, dies }) {
                                         className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-100 dark:text-gray-500 shadow-sm bg-gray-50 cursor-not-allowed"
                                     />
                                 </div>
+                                <div className="col-span-3">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Total Stroke Saat Ini <span className="text-xs text-gray-400">(Akumulasi Stroke)</span>
+                                    </label>
+                                    <div className="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 bg-gray-50 px-3 py-2 text-sm font-semibold text-blue-700 dark:text-blue-400">
+                                        {selectedDie ? selectedDie.accumulation_stroke?.toLocaleString() + ' strokes' : '-'}
+                                    </div>
+                                </div>
+                                <div className="col-span-3">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Standard Stroke
+                                    </label>
+                                    <div className="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        {selectedDie ? selectedDie.standard_stroke?.toLocaleString() + ' strokes' : '-'}
+                                    </div>
+                                </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Running Process
@@ -261,6 +338,134 @@ export default function ProductionEdit({ auth, log, dies }) {
                                     Original output: <span className="font-semibold">{log.output_qty?.toLocaleString()}</span> strokes
                                 </p>
                             </div>
+
+                            {/* Alert Proximity Guidance */}
+                            {alertGuidance && (
+                                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                                    <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
+                                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                            📊 Panduan Status PPM Alert
+                                        </h4>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        {/* Status preview */}
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <span className="text-gray-500">Status saat ini:</span>
+                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                                alertGuidance.currentStatus === 'red' ? 'bg-red-100 text-red-700' :
+                                                alertGuidance.currentStatus === 'orange' ? 'bg-orange-100 text-orange-700' :
+                                                'bg-green-100 text-green-700'
+                                            }`}>
+                                                {alertGuidance.currentStatus === 'red' ? '🔴' : alertGuidance.currentStatus === 'orange' ? '🟠' : '🟢'}
+                                                {alertGuidance.currentStatus.toUpperCase()}
+                                            </span>
+                                            {alertGuidance.statusChanged && (
+                                                <>
+                                                    <span className="text-gray-400">→</span>
+                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ring-2 ${
+                                                        alertGuidance.predictedStatus === 'red' ? 'bg-red-100 text-red-700 ring-red-400' :
+                                                        alertGuidance.predictedStatus === 'orange' ? 'bg-orange-100 text-orange-700 ring-orange-400' :
+                                                        'bg-green-100 text-green-700 ring-green-400'
+                                                    }`}>
+                                                        {alertGuidance.predictedStatus === 'red' ? '🔴' : alertGuidance.predictedStatus === 'orange' ? '🟠' : '🟢'}
+                                                        {alertGuidance.predictedStatus.toUpperCase()}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {/* Accumulation preview */}
+                                        <div className="text-xs text-gray-500 space-y-1">
+                                            <div className="flex justify-between">
+                                                <span>Akumulasi stroke (tanpa log ini):</span>
+                                                <span className="font-mono font-medium text-gray-700 dark:text-gray-300">{alertGuidance.baseAccum.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Akumulasi stroke setelah update:</span>
+                                                <span className={`font-mono font-medium ${
+                                                    alertGuidance.predictedStatus === 'red' ? 'text-red-600' :
+                                                    alertGuidance.predictedStatus === 'orange' ? 'text-orange-600' :
+                                                    'text-green-600'
+                                                }`}>{alertGuidance.effectiveAccum.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Standard Stroke:</span>
+                                                <span className="font-mono font-medium text-gray-700 dark:text-gray-300">{alertGuidance.standardStroke.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Orange threshold (std - lot):</span>
+                                                <span className="font-mono font-medium text-orange-600">{alertGuidance.orangeThreshold.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Threshold guidance */}
+                                        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+                                            <div className={`rounded-lg p-2.5 ${
+                                                alertGuidance.predictedStatus === 'orange' || alertGuidance.predictedStatus === 'red'
+                                                    ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200'
+                                                    : 'bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600'
+                                            }`}>
+                                                <div className="text-xs text-gray-500 mb-1">🟠 Menuju ORANGE</div>
+                                                {alertGuidance.currentStatus === 'orange' || alertGuidance.currentStatus === 'red' ? (
+                                                    <div className="text-xs font-medium text-orange-600">Sudah melewati</div>
+                                                ) : (
+                                                    <>
+                                                        <div className="text-sm font-bold text-orange-600">
+                                                            Output ≥ {alertGuidance.outputToOrange.toLocaleString()}
+                                                        </div>
+                                                        {alertGuidance.remainingToOrange > 0 && (
+                                                            <div className="text-xs text-gray-400 mt-0.5">
+                                                                Sisa {alertGuidance.remainingToOrange.toLocaleString()} stroke lagi
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                            <div className={`rounded-lg p-2.5 ${
+                                                alertGuidance.predictedStatus === 'red'
+                                                    ? 'bg-red-50 dark:bg-red-900/20 border border-red-200'
+                                                    : 'bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600'
+                                            }`}>
+                                                <div className="text-xs text-gray-500 mb-1">🔴 Menuju RED</div>
+                                                {alertGuidance.currentStatus === 'red' ? (
+                                                    <div className="text-xs font-medium text-red-600">Sudah melewati</div>
+                                                ) : (
+                                                    <>
+                                                        <div className="text-sm font-bold text-red-600">
+                                                            Output ≥ {alertGuidance.outputToRed.toLocaleString()}
+                                                        </div>
+                                                        {alertGuidance.remainingToRed > 0 && (
+                                                            <div className="text-xs text-gray-400 mt-0.5">
+                                                                Sisa {alertGuidance.remainingToRed.toLocaleString()} stroke lagi
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Warning if status will change */}
+                                        {alertGuidance.statusChanged && (
+                                            <div className={`flex items-start gap-2 p-2.5 rounded-lg text-xs ${
+                                                alertGuidance.predictedStatus === 'red'
+                                                    ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                                                    : alertGuidance.predictedStatus === 'orange'
+                                                    ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300'
+                                                    : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                                            }`}>
+                                                <span className="mt-0.5">⚠️</span>
+                                                <span>
+                                                    {alertGuidance.predictedStatus === 'red'
+                                                        ? 'Dengan output ini, die akan berubah ke status RED! PPM harus segera dilakukan.'
+                                                        : alertGuidance.predictedStatus === 'orange'
+                                                        ? 'Dengan output ini, die akan berubah ke status ORANGE. Segera jadwalkan PPM.'
+                                                        : 'Dengan output ini, die akan kembali ke status GREEN.'}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Actions */}
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">

@@ -90,7 +90,21 @@ export default function NotificationBell() {
             case 'red': return 'text-red-500';
             case 'orange': return 'text-orange-500';
             case 'green': return 'text-green-500';
+            case 'purple': return 'text-purple-500';
+            case 'cyan': return 'text-cyan-500';
             default: return 'text-blue-500';
+        }
+    };
+
+    // Get background color for icon circle
+    const getIconBgClass = (color) => {
+        switch (color) {
+            case 'red': return 'bg-red-100 dark:bg-red-900/30';
+            case 'orange': return 'bg-orange-100 dark:bg-orange-900/30';
+            case 'green': return 'bg-green-100 dark:bg-green-900/30';
+            case 'purple': return 'bg-purple-100 dark:bg-purple-900/30';
+            case 'cyan': return 'bg-cyan-100 dark:bg-cyan-900/30';
+            default: return 'bg-blue-100 dark:bg-blue-900/30';
         }
     };
 
@@ -158,12 +172,7 @@ export default function NotificationBell() {
                                 >
                                     <div className="flex items-start gap-3">
                                         {/* Icon */}
-                                        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                                            notification.color === 'red' ? 'bg-red-100' :
-                                            notification.color === 'orange' ? 'bg-orange-100' :
-                                            notification.color === 'green' ? 'bg-green-100' :
-                                            'bg-blue-100'
-                                        }`}>
+                                        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${getIconBgClass(notification.color)}`}>
                                             <i className={`fas ${notification.icon} ${getColorClass(notification.color)}`}></i>
                                         </div>
 

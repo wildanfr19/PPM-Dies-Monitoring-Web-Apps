@@ -7,12 +7,20 @@ use App\Models\Customer;
 use App\Models\MachineModel;
 use App\Models\PpmSchedule;
 use App\Models\TonnageStandard;
+use App\Services\DieMonitoringService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ScheduleController extends Controller
 {
+    protected DieMonitoringService $monitoringService;
+
+    public function __construct(DieMonitoringService $monitoringService)
+    {
+        $this->monitoringService = $monitoringService;
+    }
+
     /**
      * Show schedule calendar view
      */
@@ -144,6 +152,14 @@ class ScheduleController extends Controller
                 'ppm_count' => $die->ppm_count ?? 0,
                 'total_ppm_checkpoints' => $die->total_ppm_checkpoints,
                 'lot_size' => $die->lot_size_value,
+                // Scheduling info for MTN Dies
+                'last_lot_date' => $die->last_lot_date?->format('d-M-Y'),
+                'last_lot_date_set_by' => $die->last_lot_date_set_by,
+                'ppm_alert_status' => $die->ppm_alert_status,
+                'ppm_scheduled_date' => $die->ppm_scheduled_date?->format('d-M-Y'),
+                'ppm_scheduled_by' => $die->ppm_scheduled_by,
+                'schedule_approved_at' => $die->schedule_approved_at?->format('d-M-Y H:i'),
+                'needs_scheduling' => $die->last_lot_date && !$die->ppm_scheduled_date && in_array($die->ppm_alert_status, ['lot_date_set', 'orange_alerted', null]),
             ];
         }
 
@@ -164,6 +180,35 @@ class ScheduleController extends Controller
             'value' => 'nullable',
         ]);
 
+        $updateFields = [
+            $this->mapFieldToColumn($validated['field']) => $validated['value'],
+            'updated_by' => auth()->user()?->name,
+        ];
+
+        // When setting ppm_date via calendar, auto-fill pic and update die record
+        if ($validated['field'] === 'ppm_date' && $validated['value']) {
+            $existing = PpmSchedule::where([
+                'die_id' => $validated['die_id'],
+                'year' => $validated['year'],
+                'month' => $validated['month'],
+                'week' => $validated['week'],
+            ])->first();
+
+            if (!$existing || !$existing->pic) {
+                $updateFields['pic'] = auth()->user()?->name;
+            }
+
+            // Use monitoring service to update die record, set ppm_alert_status, and send notifications
+            $die = DieModel::find($validated['die_id']);
+            if ($die) {
+                $this->monitoringService->schedulePpm($die, [
+                    'scheduled_date' => $validated['value'],
+                    'pic' => auth()->user()?->name,
+                    'skip_schedule_record' => true, // Calendar manages its own PpmSchedule record below
+                ]);
+            }
+        }
+
         $schedule = PpmSchedule::updateOrCreate(
             [
                 'die_id' => $validated['die_id'],
@@ -171,9 +216,7 @@ class ScheduleController extends Controller
                 'month' => $validated['month'],
                 'week' => $validated['week'],
             ],
-            [
-                $this->mapFieldToColumn($validated['field']) => $validated['value'],
-            ]
+            $updateFields
         );
 
         return back()->with('success', 'Schedule updated successfully');

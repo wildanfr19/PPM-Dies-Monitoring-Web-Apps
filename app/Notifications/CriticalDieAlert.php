@@ -106,8 +106,8 @@ class CriticalDieAlert extends Notification
             'standard_stroke' => $this->die->standard_stroke,
             'stroke_percentage' => $this->die->stroke_percentage,
             'message' => $isRed
-                ? "🔴 CRITICAL: {$this->die->part_number} exceeded stroke limit ({$this->die->stroke_percentage}%)"
-                : "🟠 WARNING: {$this->die->part_number} approaching PPM limit ({$this->die->stroke_percentage}%)",
+                ? "🔴 CRITICAL: {$this->die->part_number} ({$this->die->part_name}) exceeded stroke limit ({$this->die->stroke_percentage}%)"
+                : "🟠 WARNING: {$this->die->part_number} ({$this->die->part_name}) approaching PPM limit ({$this->die->stroke_percentage}%)",
             'icon' => $isRed ? 'fa-exclamation-circle' : 'fa-exclamation-triangle',
             'color' => $isRed ? 'red' : 'orange',
         ];

@@ -8,10 +8,24 @@ import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
+        nik: '',
         password: '',
         remember: false,
     });
+
+    const handleNikChange = (e) => {
+        let val = e.target.value.replace(/[^0-9.]/g, '');
+        // Auto-format: 000.00.00
+        const digits = val.replace(/\./g, '');
+        if (digits.length <= 3) {
+            val = digits;
+        } else if (digits.length <= 5) {
+            val = digits.slice(0, 3) + '.' + digits.slice(3);
+        } else {
+            val = digits.slice(0, 3) + '.' + digits.slice(3, 5) + '.' + digits.slice(5, 7);
+        }
+        setData('nik', val);
+    };
 
     const submit = (e) => {
         e.preventDefault();
@@ -38,20 +52,22 @@ export default function Login({ status, canResetPassword }) {
 
             <form onSubmit={submit}>
                 <div>
-                    <InputLabel htmlFor="email" value="Email" className="text-white" />
+                    <InputLabel htmlFor="nik" value="NIK / ID Karyawan" className="text-white" />
 
                     <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
+                        id="nik"
+                        type="text"
+                        name="nik"
+                        value={data.nik}
                         className="mt-1 block w-full bg-white/10 border-white/20 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                         autoComplete="username"
                         isFocused={true}
-                        onChange={(e) => setData('email', e.target.value)}
+                        placeholder="000.00.00"
+                        maxLength={9}
+                        onChange={handleNikChange}
                     />
 
-                    <InputError message={errors.email} className="mt-2" />
+                    <InputError message={errors.nik} className="mt-2" />
                 </div>
 
                 <div className="mt-4">

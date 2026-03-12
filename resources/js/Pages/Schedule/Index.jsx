@@ -8,7 +8,32 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
     const [tonnageId, setTonnageId] = useState(filters?.tonnage_id || '');
     const [editingCell, setEditingCell] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [scheduleFilter, setScheduleFilter] = useState('all'); // 'all' | 'needs_schedule' | 'already_scheduled'
     const tableRef = useRef(null);
+
+    const isMtnDies = ['admin', 'mtn_dies'].includes(auth.user.role);
+
+    // Count dies that need scheduling
+    const needsScheduleCount = scheduleData?.reduce((sum, g) =>
+        sum + (g.dies?.filter(d => d.needs_scheduling).length || 0), 0
+    ) || 0;
+
+    // Count dies already scheduled
+    const alreadyScheduledCount = scheduleData?.reduce((sum, g) =>
+        sum + (g.dies?.filter(d => d.ppm_scheduled_date && !d.needs_scheduling).length || 0), 0
+    ) || 0;
+
+    // Filter schedule data based on active filter
+    const filteredScheduleData = scheduleFilter === 'all'
+        ? scheduleData
+        : scheduleData?.map(group => ({
+            ...group,
+            dies: group.dies?.filter(d =>
+                scheduleFilter === 'needs_schedule' ? d.needs_scheduling
+                : scheduleFilter === 'already_scheduled' ? (d.ppm_scheduled_date && !d.needs_scheduling)
+                : true
+            ) || [],
+        })).filter(group => group.dies.length > 0);
 
     const { data, setData, post, processing, reset } = useForm({
         die_id: '',
@@ -214,6 +239,59 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                         </button>
                     </div>
 
+                    {/* MTN Dies: Schedule Status Filters */}
+                    {isMtnDies && (needsScheduleCount > 0 || alreadyScheduledCount > 0) && (
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-medium text-gray-500 mr-1">Filter:</span>
+                            <button
+                                onClick={() => setScheduleFilter('all')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                                    scheduleFilter === 'all'
+                                        ? 'bg-gray-700 text-white shadow-md'
+                                        : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                                }`}
+                            >
+                                📋 Semua
+                            </button>
+                            {needsScheduleCount > 0 && (
+                                <button
+                                    onClick={() => setScheduleFilter(scheduleFilter === 'needs_schedule' ? 'all' : 'needs_schedule')}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                                        scheduleFilter === 'needs_schedule'
+                                            ? 'bg-amber-500 text-white shadow-md ring-2 ring-amber-300'
+                                            : 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100'
+                                    }`}
+                                >
+                                    <span className="relative flex h-2.5 w-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                                    </span>
+                                    🔔 Perlu Dijadwalkan ({needsScheduleCount})
+                                </button>
+                            )}
+                            {alreadyScheduledCount > 0 && (
+                                <button
+                                    onClick={() => setScheduleFilter(scheduleFilter === 'already_scheduled' ? 'all' : 'already_scheduled')}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                                        scheduleFilter === 'already_scheduled'
+                                            ? 'bg-green-600 text-white shadow-md ring-2 ring-green-300'
+                                            : 'bg-green-50 text-green-800 border border-green-300 hover:bg-green-100'
+                                    }`}
+                                >
+                                    ✅ Sudah Dijadwalkan ({alreadyScheduledCount})
+                                </button>
+                            )}
+                            {scheduleFilter !== 'all' && (
+                                <span className="text-xs text-gray-500 ml-2">
+                                    {scheduleFilter === 'needs_schedule'
+                                        ? 'Menampilkan dies yang sudah ada LOT date tapi belum dijadwalkan PPM'
+                                        : 'Menampilkan dies yang sudah memiliki jadwal PPM'
+                                    }
+                                </span>
+                            )}
+                        </div>
+                    )}
+
                     {/* Edit hint */}
                     <div className="mt-3 text-xs text-gray-500 flex items-center gap-1">
                         <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">💡 Tip:</span>
@@ -263,8 +341,8 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                             </thead>
 
                             <tbody>
-                                {scheduleData?. length > 0 ? (
-                                    scheduleData.map((group, groupIndex) => (
+                                {filteredScheduleData?. length > 0 ? (
+                                    filteredScheduleData.map((group, groupIndex) => (
                                         <React.Fragment key={`group-${groupIndex}`}>
                                             {/* Group Header */}
                                             <tr className="bg-green-100">
@@ -277,14 +355,21 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                             {group.dies?. map((die, dieIndex) => (
                                                 <React.Fragment key={`die-${die.id}`}>
                                                     {/* Row 1: Part Number + Forecast */}
-                                                    <tr key={`${die.id}-1`} className="border-t-2 border-gray-300 hover:bg-gray-50">
-                                                        <td className="border px-2 py-1 text-center font-medium bg-gray-50 sticky left-0 z-10" rowSpan={6}>
+                                                    <tr key={`${die.id}-1`} className={`border-t-2 border-gray-300 hover:bg-gray-50 ${die.needs_scheduling ? 'bg-amber-50/60' : ''}`}>
+                                                        <td className={`border px-2 py-1 text-center font-medium sticky left-0 z-10 ${die.needs_scheduling ? 'bg-amber-50 border-l-4 border-l-amber-400' : 'bg-gray-50'}`} rowSpan={6}>
                                                             {groupIndex * 100 + dieIndex + 1}
                                                         </td>
-                                                        <td className="border px-2 py-1 sticky left-[40px] bg-white z-10">
-                                                            <a href={route('dies.show', die.id)} className="text-blue-600 hover:underline font-medium">
-                                                                {die.part_number}
-                                                            </a>
+                                                        <td className={`border px-2 py-1 sticky left-[40px] z-10 ${die.needs_scheduling ? 'bg-amber-50' : 'bg-white'}`}>
+                                                            <div className="flex items-center gap-1">
+                                                                <a href={route('dies.show', die.id)} className="text-blue-600 hover:underline font-medium">
+                                                                    {die.part_number}
+                                                                </a>
+                                                                {die.needs_scheduling && (
+                                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-400 text-white animate-pulse" title={`LOT Date: ${die.last_lot_date} (by ${die.last_lot_date_set_by})`}>
+                                                                        📅 SCHEDULE
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="border px-2 py-1 text-center bg-gray-50" rowSpan={6}>
                                                             {die.model}
@@ -383,9 +468,19 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                     </tr>
 
                                                     {/* Row 2: Part Name + Plan */}
-                                                    <tr key={`${die.id}-2`} className="hover:bg-gray-50">
-                                                        <td className="border px-2 py-1 text-gray-600 text-xs sticky left-[40px] bg-white z-10 truncate max-w-[180px]" title={die.part_name}>
-                                                            {die.part_name}
+                                                    <tr key={`${die.id}-2`} className={`hover:bg-gray-50 ${die.needs_scheduling ? 'bg-amber-50/40' : ''}`}>
+                                                        <td className={`border px-2 py-1 text-gray-600 text-xs sticky left-[40px] z-10 max-w-[180px] ${die.needs_scheduling ? 'bg-amber-50' : 'bg-white'}`} title={die.part_name}>
+                                                            <div className="truncate">{die.part_name}</div>
+                                                            {die.last_lot_date && (
+                                                                <div className="text-[10px] text-purple-600 mt-0.5 flex items-center gap-1" title={`Set by ${die.last_lot_date_set_by}`}>
+                                                                    📅 LOT: {die.last_lot_date}
+                                                                </div>
+                                                            )}
+                                                            {die.ppm_scheduled_date && (
+                                                                <div className="text-[10px] text-green-600 mt-0.5 flex items-center gap-1" title={`Scheduled by ${die.ppm_scheduled_by}`}>
+                                                                    ✅ Scheduled: {die.ppm_scheduled_date}
+                                                                </div>
+                                                            )}
                                                         </td>
                                                         <td className="border px-2 py-1"></td>
                                                         <td className="border px-2 py-1"></td>
@@ -534,11 +629,17 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                             <span className="bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Cell</span>
                             <span>Click to Edit</span>
                         </div>
+                        {isMtnDies && (
+                            <div className="flex items-center gap-2 ml-4 border-l pl-4">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-400 text-white">📅 SCHEDULE</span>
+                                <span>Perlu Dijadwalkan PPM</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Summary Stats */}
-                <div className="mt-4 grid grid-cols-4 gap-4">
+                <div className={`mt-4 grid gap-4 ${isMtnDies ? 'grid-cols-6' : 'grid-cols-4'}`}>
                     <div className="bg-white rounded-lg shadow-sm p-4 text-center">
                         <div className="text-2xl font-bold text-gray-900">
                             {scheduleData?.reduce((sum, g) => sum + (g.dies?.length || 0), 0) || 0}
@@ -563,6 +664,32 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                         </div>
                         <div className="text-sm text-red-700">Critical</div>
                     </div>
+                    {isMtnDies && (
+                        <>
+                            <div
+                                onClick={() => setScheduleFilter(scheduleFilter === 'needs_schedule' ? 'all' : 'needs_schedule')}
+                                className={`rounded-lg shadow-sm p-4 text-center border cursor-pointer transition hover:shadow-md ${
+                                    needsScheduleCount > 0 ? 'bg-amber-50 border-amber-300' : 'bg-gray-50 border-gray-200'
+                                } ${scheduleFilter === 'needs_schedule' ? 'ring-2 ring-amber-400' : ''}`}
+                            >
+                                <div className={`text-2xl font-bold ${needsScheduleCount > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+                                    {needsScheduleCount}
+                                </div>
+                                <div className="text-sm text-amber-700">🔔 Perlu Dijadwalkan</div>
+                            </div>
+                            <div
+                                onClick={() => setScheduleFilter(scheduleFilter === 'already_scheduled' ? 'all' : 'already_scheduled')}
+                                className={`rounded-lg shadow-sm p-4 text-center border cursor-pointer transition hover:shadow-md ${
+                                    alreadyScheduledCount > 0 ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'
+                                } ${scheduleFilter === 'already_scheduled' ? 'ring-2 ring-green-400' : ''}`}
+                            >
+                                <div className={`text-2xl font-bold ${alreadyScheduledCount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                                    {alreadyScheduledCount}
+                                </div>
+                                <div className="text-sm text-green-700">✅ Sudah Dijadwalkan</div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
