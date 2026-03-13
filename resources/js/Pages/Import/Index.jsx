@@ -890,7 +890,7 @@ export default function ImportIndex({ auth }) {
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Row</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Part Number</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Part Name</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Tanggal</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Date</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Shift</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Line</th>
                                                         <th className="px-3 py-2 text-right text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Output</th>
@@ -930,7 +930,7 @@ export default function ImportIndex({ auth }) {
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Row</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Part Number</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Part Name</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Tanggal</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Date</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Shift</th>
                                                         <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Qty Lama</th>
                                                         <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Ditambah</th>
@@ -972,7 +972,7 @@ export default function ImportIndex({ auth }) {
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Row</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Part Number</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Part Name</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Tanggal</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Date</th>
                                                         <th className="px-3 py-2 text-right text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Output</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Alasan</th>
                                                     </tr>
