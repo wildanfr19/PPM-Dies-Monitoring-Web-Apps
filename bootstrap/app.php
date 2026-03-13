@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register alias for role middleware
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'decrypt.ids' => \App\Http\Middleware\DecryptRouteIds::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

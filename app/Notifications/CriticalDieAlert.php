@@ -74,7 +74,7 @@ class CriticalDieAlert extends Notification
                 ->line("1. MTN Dies: Schedule PPM immediately")
                 ->line("2. Stop using the die if possible")
                 ->line("3. Perform PPM Processing according to procedure")
-                ->action('View Details & Process PPM', url("/dies/{$this->die->id}"))
+                ->action('View Details & Process PPM', url("/dies/{$this->die->encrypted_id}"))
                 ->line('⚠️ Ignoring this warning may cause die damage and high repair costs.');
         } else {
             $message->line("")
@@ -82,7 +82,7 @@ class CriticalDieAlert extends Notification
                 ->line("1. Plan PPM schedule in the near future")
                 ->line("2. Prepare resources for maintenance")
                 ->line("3. Monitor die usage")
-                ->action('View Die Details', url("/dies/{$this->die->id}"))
+                ->action('View Die Details', url("/dies/{$this->die->encrypted_id}"))
                 ->line('Schedule PPM before reaching critical limit to prevent issues.');
         }
 
@@ -97,7 +97,7 @@ class CriticalDieAlert extends Notification
 
         return [
             'type' => $isRed ? 'red_alert' : 'orange_alert',
-            'die_id' => $this->die->id,
+            'die_id' => $this->die->encrypted_id,
             'part_number' => $this->die->part_number,
             'part_name' => $this->die->part_name,
             'customer' => $this->die->customer?->code,

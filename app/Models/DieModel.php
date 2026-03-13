@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\HasEncryptedRouteKey;
 
 class DieModel extends Model
 {
-    use HasFactory;
+    use HasFactory, HasEncryptedRouteKey;
 
     protected $table = 'dies';
 
@@ -69,6 +70,13 @@ class DieModel extends Model
         'die_group',
         // Special 4-lot check flag
         'is_4lot_check',
+        // Schedule remarks
+        'schedule_remark',
+        'schedule_change_reason',
+        'mtn_remark',
+        'ppic_remark',
+        'schedule_cancelled_at',
+        'schedule_cancelled_by',
     ];
 
     protected $casts = [
@@ -82,7 +90,10 @@ class DieModel extends Model
         'ppm_finished_at' => 'datetime',
         'returned_to_production_at' => 'datetime',
         'is_4lot_check' => 'boolean',
+        'schedule_cancelled_at' => 'datetime',
     ];
+
+    protected $appends = ['encrypted_id'];
 
     // ==================== RELATIONSHIPS ====================
 
@@ -114,6 +125,31 @@ class DieModel extends Model
     public function specialRepairs()
     {
         return $this->hasMany(SpecialDiesRepair::class, 'die_id');
+    }
+
+    public function dieProcesses()
+    {
+        return $this->hasMany(DieProcess::class, 'die_id')->orderBy('process_order');
+    }
+
+    /**
+     * Get count of completed processes vs total processes for current PPM cycle
+     */
+    public function getPpmProcessProgressAttribute(): array
+    {
+        $processes = $this->dieProcesses;
+        $total = $processes->count();
+        $completed = $processes->where('ppm_status', 'completed')->count();
+        $inProgress = $processes->where('ppm_status', 'in_progress')->count();
+
+        return [
+            'total' => $total,
+            'completed' => $completed,
+            'in_progress' => $inProgress,
+            'pending' => $total - $completed - $inProgress,
+            'all_completed' => $total > 0 && $completed === $total,
+            'percentage' => $total > 0 ? round(($completed / $total) * 100) : 0,
+        ];
     }
 
     // ==================== ACCESSORS ====================

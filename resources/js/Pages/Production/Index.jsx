@@ -25,10 +25,10 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
         router.get(route('production.index'));
     };
 
-    const handleDelete = async (id, partNumber) => {
+    const handleDelete = async (encryptedId, partNumber) => {
         const confirmed = await confirmDelete(`production log for ${partNumber}`);
         if (confirmed) {
-            router.delete(route('production.destroy', id));
+            router.delete(route('production.destroy', encryptedId));
         }
     };
 
@@ -143,7 +143,6 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Line</th>
                                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Qty Die</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Process</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Time</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Output</th>
                                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                                 </tr>
@@ -172,7 +171,7 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                                                 {log.die?.part_name}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                {log.model || '-'}
+                                                {log.model || log.die?.machine_model?.code || '-'}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                                 {log.line || '-'}
@@ -191,12 +190,6 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                                                     {log.running_process}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                                {log.start_time && log.finish_time
-                                                    ? `${log.start_time} - ${log.finish_time}`
-                                                    : '-'
-                                                }
-                                            </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-right">
                                                 <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                                     {log.output_qty?. toLocaleString()}
@@ -205,21 +198,21 @@ export default function ProductionIndex({ auth, logs, filters, dies }) {
                                             <td className="px-4 py-3 whitespace-nowrap text-center">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Link
-                                                        href={route('production.show', log.id)}
+                                                        href={route('production.show', log.encrypted_id)}
                                                         className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                                                         title="View"
                                                     >
                                                         <i className="fas fa-eye"></i>
                                                     </Link>
                                                     <Link
-                                                        href={route('production.edit', log.id)}
+                                                        href={route('production.edit', log.encrypted_id)}
                                                         className="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
                                                         title="Edit"
                                                     >
                                                         <i className="fas fa-edit"></i>
                                                     </Link>
                                                     <button
-                                                        onClick={() => handleDelete(log.id, log.die?.part_number)}
+                                                        onClick={() => handleDelete(log.encrypted_id, log.die?.part_number)}
                                                         className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                                                         title="Delete"
                                                     >

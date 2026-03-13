@@ -51,9 +51,11 @@ export default function AppLayout({ user, header, children }) {
     const allNavigation = [
         { name: 'Dashboard', href: route('dashboard'), icon: 'fa-chart-pie', current: url === '/dashboard', roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm', 'ppic'] },
         { name: 'Dies List', href: route('dies.index'), icon: 'fa-wrench', current: url.startsWith('/dies'), roles: ['admin', 'mtn_dies', 'md', 'mgr_gm', 'ppic', 'production', 'pe'] },
+        { name: 'Transfer Dies', href: route('transfer-dies.index'), icon: 'fa-exchange-alt', current: url.startsWith('/transfer-dies'), roles: ['admin', 'mtn_dies', 'production'] },
         { name: 'Schedule Calendar', href: route('schedule.index'), icon: 'fa-calendar-alt', current: url.startsWith('/schedule'), roles: ['admin', 'mtn_dies', 'ppic'] },
         { name: 'Production Result', href: route('production.index'), icon: 'fa-cogs', current: url.startsWith('/production'), roles: ['admin', 'mtn_dies', 'production', 'pe'] },
-        { name: 'Special Repair', href: route('special-repair.index'), icon: 'fa-tools', current: url.startsWith('/special-repair'), roles: ['admin', 'mtn_dies', 'production'] },
+        { name: 'Messages', href: route('messages.index'), icon: 'fa-comments', current: url.startsWith('/messages'), roles: ['admin', 'mtn_dies', 'ppic'] },
+        { name: 'Special Repair', href: route('special-repair.index'), icon: 'fa-tools', current: url.startsWith('/special-repair'), roles: ['admin', 'mtn_dies'] },
         { name: 'Import / Export', href: route('import.index'), icon: 'fa-file-import', current: url.startsWith('/import'), roles: ['admin', 'mtn_dies', 'production', 'pe'] },
         { name: 'Reports', href: route('reports.index'), icon: 'fa-chart-line', current: url.startsWith('/reports'), roles: ['admin', 'mtn_dies', 'production', 'pe', 'md', 'mgr_gm', 'ppic'] },
     ];

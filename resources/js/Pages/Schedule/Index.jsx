@@ -361,7 +361,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                                         </td>
                                                         <td className={`border px-2 py-1 sticky left-[40px] z-10 ${die.needs_scheduling ? 'bg-amber-50' : 'bg-white'}`}>
                                                             <div className="flex items-center gap-1">
-                                                                <a href={route('dies.show', die.id)} className="text-blue-600 hover:underline font-medium">
+                                                                <a href={route('dies.show', die.encrypted_id)} className="text-blue-600 hover:underline font-medium">
                                                                     {die.part_number}
                                                                 </a>
                                                                 {die.needs_scheduling && (

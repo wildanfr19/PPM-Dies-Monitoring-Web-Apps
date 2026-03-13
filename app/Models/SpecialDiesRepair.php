@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasEncryptedRouteKey;
 
 class SpecialDiesRepair extends Model
 {
-    use HasFactory;
+    use HasFactory, HasEncryptedRouteKey;
 
     protected $table = 'special_dies_repairs';
 
@@ -65,6 +66,8 @@ class SpecialDiesRepair extends Model
         'is_ppm_interrupted' => 'boolean',
         'is_urgent_delivery' => 'boolean',
     ];
+
+    protected $appends = ['encrypted_id'];
 
     // ==================== RELATIONSHIPS ====================
 

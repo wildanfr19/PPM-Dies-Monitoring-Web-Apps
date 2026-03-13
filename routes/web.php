@@ -12,6 +12,8 @@ use App\Http\Controllers\TonnageStandardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SpecialDiesRepairController;
+use App\Http\Controllers\TransferDiesController;
+use App\Http\Controllers\UserMessageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ScheduleController;
@@ -60,6 +62,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Flow: Processing PPM → "The Process is Normal?" → No → Additional Repair Dies
         Route::post('dies/{die}/additional-repair', [DieController::class, 'markAdditionalRepair'])->name('dies.additional-repair');
         Route::post('dies/{die}/resume-ppm', [DieController::class, 'resumePpmAfterRepair'])->name('dies.resume-ppm');
+        // Cancel / Reschedule PPM
+        Route::post('dies/{die}/cancel-schedule', [DieController::class, 'cancelSchedule'])->name('dies.cancel-schedule');
+        Route::post('dies/{die}/reschedule', [DieController::class, 'reschedule'])->name('dies.reschedule');
+        // Multi-process PPM actions
+        Route::post('die-process/{process}/start', [DieController::class, 'startProcess'])->name('dies.process-start');
+        Route::post('die-process/{process}/complete', [DieController::class, 'completeProcess'])->name('dies.process-complete');
+        // MTN Dies remark
+        Route::post('dies/{die}/mtn-remark', [DieController::class, 'updateMtnRemark'])->name('dies.mtn-remark');
 
         // Batch PPM Actions - multiple dies at once
         Route::post('dies/batch/start-ppm', [DieController::class, 'batchStartPpm'])->name('dies.batch-start-ppm');
@@ -74,6 +84,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('dies/batch/set-last-lot-date', [DieController::class, 'batchSetLastLotDate'])->name('dies.batch-set-last-lot-date');
         Route::post('dies/{die}/set-last-lot-date', [DieController::class, 'setLastLotDate'])->name('dies.set-last-lot-date');
         Route::post('dies/{die}/approve-schedule', [DieController::class, 'approvePpmSchedule'])->name('dies.approve-schedule');
+        // PPIC remark
+        Route::post('dies/{die}/ppic-remark', [DieController::class, 'updatePpicRemark'])->name('dies.ppic-remark');
     });
 
     // PROD: Transfer Dies to MTN
@@ -166,6 +178,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Special scenarios
         Route::post('/special-repair/urgent-delivery', [SpecialDiesRepairController::class, 'handleUrgentDelivery'])->name('special-repair.urgent-delivery');
         Route::post('/special-repair/severe-damage', [SpecialDiesRepairController::class, 'handleSevereDamage'])->name('special-repair.severe-damage');
+    });
+
+    // ==================== TRANSFER DIES (Separate Menu) ====================
+    // Accessible by admin, production, mtn_dies
+    Route::middleware(['role:admin,production,mtn_dies'])->group(function () {
+        Route::get('/transfer-dies', [TransferDiesController::class, 'index'])->name('transfer-dies.index');
+    });
+    // Transfer TO MTN - Production role
+    Route::middleware(['role:admin,production'])->group(function () {
+        Route::post('/transfer-dies/{die}/to-mtn', [TransferDiesController::class, 'transferToMtn'])->name('transfer-dies.to-mtn');
+        Route::post('/transfer-dies/batch/to-mtn', [TransferDiesController::class, 'batchTransferToMtn'])->name('transfer-dies.batch-to-mtn');
+    });
+    // Transfer BACK to Production - MTN Dies role
+    Route::middleware(['role:admin,mtn_dies'])->group(function () {
+        Route::post('/transfer-dies/{die}/to-production', [TransferDiesController::class, 'transferToProduction'])->name('transfer-dies.to-production');
+        Route::post('/transfer-dies/batch/to-production', [TransferDiesController::class, 'batchTransferToProduction'])->name('transfer-dies.batch-to-production');
+    });
+
+    // ==================== USER MESSAGES (MTN Dies <-> PPIC) ====================
+    Route::middleware(['role:admin,mtn_dies,ppic'])->group(function () {
+        Route::get('/messages', [UserMessageController::class, 'index'])->name('messages.index');
+        Route::post('/messages', [UserMessageController::class, 'store'])->name('messages.store');
+        Route::get('/messages/{message}', [UserMessageController::class, 'show'])->name('messages.show');
+        Route::post('/messages/{message}/reply', [UserMessageController::class, 'reply'])->name('messages.reply');
+        Route::post('/messages/{message}/read', [UserMessageController::class, 'markRead'])->name('messages.read');
+        Route::get('/messages-unread-count', [UserMessageController::class, 'unreadCount'])->name('messages.unread-count');
     });
 
     // Profile

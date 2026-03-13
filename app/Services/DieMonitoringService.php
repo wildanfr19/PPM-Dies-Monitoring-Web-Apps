@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\DieModel;
+use App\Models\DieProcess;
 use App\Models\ProductionLog;
 use App\Models\PpmHistory;
 use App\Models\User;
@@ -107,6 +108,7 @@ class DieMonitoringService
             ->take($limit)
             ->map(fn($die) => [
                 'id' => $die->id,
+                'encrypted_id' => $die->encrypted_id,
                 'part_number' => $die->part_number,
                 'part_name' => $die->part_name,
                 'accumulation_stroke' => $die->accumulation_stroke,
@@ -361,13 +363,19 @@ class DieMonitoringService
     /**
      * Mark die as PPM in progress
      * PPM activity starts (max n+1 from transfer, n+3 total from RED)
+     * Now supports multi-process initialization
      */
-    public function startPpmProcessing(DieModel $die): void
+    public function startPpmProcessing(DieModel $die, array $processTypes = []): void
     {
         $die->update([
             'ppm_alert_status' => 'ppm_in_progress',
             'ppm_started_at' => now(),
         ]);
+
+        // Initialize die processes if process types provided
+        if (!empty($processTypes)) {
+            $this->initializeDieProcesses($die, $processTypes);
+        }
 
         // Send notification
         $this->sendWorkflowNotification($die, 'ppm_in_progress');
@@ -552,6 +560,7 @@ class DieMonitoringService
                     $upcoming[] = [
                         'die' => [
                             'id' => $die->id,
+                            'encrypted_id' => $die->encrypted_id,
                             'part_number' => $die->part_number,
                             'part_name' => $die->part_name,
                             'accumulation_stroke' => $die->accumulation_stroke,
@@ -645,5 +654,219 @@ class DieMonitoringService
             // Set cache to prevent duplicate from scheduled command
             cache()->put("ppm_red_alert_{$die->id}_" . now()->format('Y-m-d'), true, now()->endOfDay());
         }
+    }
+
+    // ==================== MULTI-PROCESS PPM ====================
+
+    /**
+     * Initialize die processes based on qty_die.
+     * Called when MTN Dies starts PPM - creates process records for tracking.
+     *
+     * @param DieModel $die
+     * @param array $processTypes Array of process_type values selected via checkboxes
+     */
+    public function initializeDieProcesses(DieModel $die, array $processTypes): void
+    {
+        // Clear any existing pending processes from previous cycle
+        $die->dieProcesses()->where('ppm_status', '!=', 'completed')->delete();
+
+        foreach ($processTypes as $order => $processType) {
+            DieProcess::updateOrCreate(
+                [
+                    'die_id' => $die->id,
+                    'process_type' => $processType,
+                    'process_order' => $order + 1,
+                ],
+                [
+                    'ppm_status' => 'pending',
+                    'ppm_started_at' => null,
+                    'ppm_completed_at' => null,
+                    'ppm_history_id' => null,
+                    'completed_by' => null,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Complete a single process within a multi-process PPM.
+     * If all processes complete, triggers full PPM completion.
+     */
+    public function completeProcess(DieProcess $process, array $data): PpmHistory
+    {
+        return DB::transaction(function () use ($process, $data) {
+            $die = $process->die;
+            $die->load(['machineModel.tonnageStandard', 'customer']);
+
+            // Record individual process PPM history
+            $ppmCount = ($die->ppm_count ?? 0) + 1;
+            $history = PpmHistory::create([
+                'die_id' => $die->id,
+                'ppm_date' => $data['ppm_date'],
+                'stroke_at_ppm' => $die->accumulation_stroke,
+                'ppm_number' => $ppmCount,
+                'process_type' => $process->process_type,
+                'checklist_results' => $data['checklist_results'] ?? null,
+                'pic' => $data['pic'],
+                'status' => 'done',
+                'maintenance_type' => $data['maintenance_type'] ?? 'routine',
+                'work_performed' => $data['work_performed'] ?? null,
+                'parts_replaced' => $data['parts_replaced'] ?? null,
+                'findings' => $data['findings'] ?? null,
+                'recommendations' => $data['recommendations'] ?? null,
+                'checked_by' => $data['checked_by'] ?? null,
+                'approved_by' => $data['approved_by'] ?? null,
+                'created_by' => auth()->id(),
+            ]);
+
+            // Mark process as completed
+            $process->update([
+                'ppm_status' => 'completed',
+                'ppm_completed_at' => now(),
+                'ppm_history_id' => $history->id,
+                'completed_by' => $data['pic'],
+            ]);
+
+            // Check if ALL processes for this die are now completed
+            $die->refresh();
+            $progress = $die->ppm_process_progress;
+
+            if ($progress['all_completed']) {
+                // All processes done - complete the full PPM cycle
+                $die->update([
+                    'ppm_count' => $ppmCount,
+                    'stroke_at_last_ppm' => 0,
+                    'last_ppm_date' => $data['ppm_date'],
+                    'ppm_alert_status' => 'ppm_completed',
+                    'ppm_finished_at' => now(),
+                    'ppm_total_days' => $die->red_alerted_at
+                        ? (int) $die->red_alerted_at->diffInWeekdays(now())
+                        : null,
+                    'accumulation_stroke' => 0,
+                    'last_stroke' => 0,
+                ]);
+
+                $this->sendPpmCompletedNotification($die, $history);
+                $this->transferBackToProduction($die);
+            } else {
+                // Partial completion - send workflow notification
+                $this->sendWorkflowNotification($die, 'process_completed', $data['pic'], [
+                    'process_type' => $process->process_type,
+                    'completed' => $progress['completed'],
+                    'total' => $progress['total'],
+                ]);
+            }
+
+            return $history;
+        });
+    }
+
+    /**
+     * Start a specific process within multi-process PPM
+     */
+    public function startProcess(DieProcess $process): void
+    {
+        $process->update([
+            'ppm_status' => 'in_progress',
+            'ppm_started_at' => now(),
+        ]);
+
+        $die = $process->die;
+        $die->loadMissing(['customer', 'machineModel']);
+        $this->sendWorkflowNotification($die, 'process_started', auth()->user()?->name, [
+            'process_type' => $process->process_label,
+        ]);
+    }
+
+    // ==================== SCHEDULE REMARKS ====================
+
+    /**
+     * Schedule PPM with remark/reason
+     */
+    public function schedulePpmWithRemark(DieModel $die, array $data): void
+    {
+        $die->update([
+            'ppm_alert_status' => 'ppm_scheduled',
+            'ppm_scheduled_date' => $data['scheduled_date'] ?? null,
+            'ppm_scheduled_by' => $data['pic'] ?? auth()->user()?->name,
+            'schedule_remark' => $data['schedule_remark'] ?? null,
+            'schedule_change_reason' => null, // clear previous change reason
+            'schedule_cancelled_at' => null,
+            'schedule_cancelled_by' => null,
+        ]);
+
+        if (!empty($data['scheduled_date']) && empty($data['skip_schedule_record'])) {
+            $die->ppmSchedules()->create([
+                'year' => \Carbon\Carbon::parse($data['scheduled_date'])->year,
+                'month' => \Carbon\Carbon::parse($data['scheduled_date'])->month,
+                'week' => \Carbon\Carbon::parse($data['scheduled_date'])->weekOfMonth,
+                'plan_week' => $data['plan_week'] ?? null,
+                'pic' => $data['pic'] ?? null,
+                'notes' => $data['schedule_remark'] ?? 'Scheduled after Orange Alert',
+            ]);
+        }
+
+        $this->sendWorkflowNotification($die, 'ppm_scheduled', $data['pic'] ?? null, [
+            'scheduled_date' => $data['scheduled_date'] ?? null,
+            'remark' => $data['schedule_remark'] ?? null,
+        ]);
+    }
+
+    /**
+     * Cancel PPM schedule with reason
+     */
+    public function cancelPpmSchedule(DieModel $die, array $data): void
+    {
+        $die->update([
+            'ppm_alert_status' => $die->ppm_status === 'red' ? 'red_alerted' : 'orange_alerted',
+            'schedule_change_reason' => $data['reason'],
+            'schedule_cancelled_at' => now(),
+            'schedule_cancelled_by' => auth()->user()?->name,
+            'ppm_scheduled_date' => null,
+            'ppm_scheduled_by' => null,
+            'schedule_approved_at' => null,
+            'schedule_approved_by' => null,
+        ]);
+
+        $this->sendWorkflowNotification($die, 'schedule_cancelled', auth()->user()?->name, [
+            'reason' => $data['reason'],
+        ]);
+    }
+
+    /**
+     * Reschedule PPM with change reason
+     */
+    public function reschedulePpm(DieModel $die, array $data): void
+    {
+        $die->update([
+            'ppm_scheduled_date' => $data['scheduled_date'],
+            'ppm_scheduled_by' => $data['pic'] ?? auth()->user()?->name,
+            'schedule_change_reason' => $data['reason'] ?? null,
+            'schedule_remark' => $data['schedule_remark'] ?? $die->schedule_remark,
+            'schedule_approved_at' => null, // Needs re-approval
+            'schedule_approved_by' => null,
+            'ppm_alert_status' => 'ppm_scheduled', // Reset to scheduled
+        ]);
+
+        $this->sendWorkflowNotification($die, 'schedule_changed', $data['pic'] ?? null, [
+            'new_date' => $data['scheduled_date'],
+            'reason' => $data['reason'] ?? null,
+        ]);
+    }
+
+    /**
+     * Update MTN Dies remark on a die
+     */
+    public function updateMtnRemark(DieModel $die, string $remark): void
+    {
+        $die->update(['mtn_remark' => $remark]);
+    }
+
+    /**
+     * Update PPIC remark on a die
+     */
+    public function updatePpicRemark(DieModel $die, string $remark): void
+    {
+        $die->update(['ppic_remark' => $remark]);
     }
 }

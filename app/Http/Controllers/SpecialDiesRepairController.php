@@ -33,6 +33,7 @@ class SpecialDiesRepairController extends Controller
         $repairs = $query->orderByDesc('created_at')->get()->map(function ($repair) {
             return [
                 'id' => $repair->id,
+                'encrypted_id' => $repair->encrypted_id,
                 'die_id' => $repair->die_id,
                 'part_number' => $repair->die?->part_number,
                 'part_name' => $repair->die?->part_name,
@@ -138,8 +139,10 @@ class SpecialDiesRepairController extends Controller
         return Inertia::render('SpecialRepair/Show', [
             'repair' => [
                 'id' => $specialRepair->id,
+                'encrypted_id' => $specialRepair->encrypted_id,
                 'die' => [
                     'id' => $specialRepair->die->id,
+                    'encrypted_id' => $specialRepair->die->encrypted_id,
                     'part_number' => $specialRepair->die->part_number,
                     'part_name' => $specialRepair->die->part_name,
                     'customer' => $specialRepair->die->customer,

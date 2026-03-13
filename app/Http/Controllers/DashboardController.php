@@ -49,6 +49,7 @@ class DashboardController extends Controller
             ->get()
             ->map(fn($r) => [
                 'id' => $r->id,
+                'encrypted_id' => $r->encrypted_id,
                 'part_number' => $r->die?->part_number,
                 'repair_type_label' => $r->repair_type_label,
                 'priority' => $r->priority,
@@ -144,6 +145,7 @@ class DashboardController extends Controller
 
             $groups[$group]['dies'][] = [
                 'id' => $die->id,
+                'encrypted_id' => $die->encrypted_id,
                 'part_number' => $die->part_number,
                 'customer' => $die->customer?->code,
                 'stroke_percentage' => $die->stroke_percentage,
@@ -297,6 +299,7 @@ class DashboardController extends Controller
 
             $timeline[] = [
                 'id' => $die->id,
+                'encrypted_id' => $die->encrypted_id,
                 'part_number' => $die->part_number,
                 'customer' => $die->customer?->code,
                 'ppm_alert_status' => $die->ppm_alert_status,

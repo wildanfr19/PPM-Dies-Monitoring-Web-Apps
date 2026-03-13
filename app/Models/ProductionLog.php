@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasEncryptedRouteKey;
 
 class ProductionLog extends Model
 {
-    use HasFactory;
+    use HasFactory, HasEncryptedRouteKey;
 
     protected $fillable = [
         'die_id',
@@ -32,6 +33,8 @@ class ProductionLog extends Model
         'finish_time' => 'string',
         'total_hours' => 'decimal:2',
     ];
+
+    protected $appends = ['encrypted_id'];
 
     public function getStartTimeAttribute($value): ?string
     {

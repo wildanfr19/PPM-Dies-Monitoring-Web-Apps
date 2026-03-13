@@ -69,7 +69,7 @@ class PpmWorkflowNotification extends Notification
             $mail->line("**Scheduled Date:** {$this->extra['scheduled_date']}");
         }
 
-        $mail->action('View Die Details', url("/dies/{$this->die->id}"))
+        $mail->action('View Die Details', url("/dies/{$this->die->encrypted_id}"))
             ->salutation('PPM Dies Monitoring System');
 
         return $mail;
@@ -81,7 +81,7 @@ class PpmWorkflowNotification extends Notification
 
         return [
             'type' => $this->event,
-            'die_id' => $this->die->id,
+            'die_id' => $this->die->encrypted_id,
             'part_number' => $this->die->part_number,
             'part_name' => $this->die->part_name,
             'customer' => $this->die->customer?->code,
@@ -139,6 +139,20 @@ class PpmWorkflowNotification extends Notification
                 'message' => "✅ PPM Completed for {$label} — Status changed Red → Green by {$actor}",
                 'icon' => 'fa-check-circle',
                 'color' => 'green',
+            ],
+            'process_completed' => [
+                'message' => "⚙️ Process " .
+                    ($this->extra['process_type'] ?? '') . " completed for {$label}" .
+                    (isset($this->extra['completed'], $this->extra['total']) ? " ({$this->extra['completed']}/{$this->extra['total']})" : '') .
+                    " by {$actor}",
+                'icon' => 'fa-check',
+                'color' => 'blue',
+            ],
+            'process_started' => [
+                'message' => "▶️ Process " .
+                    ($this->extra['process_type'] ?? '') . " started for {$label} by {$actor}",
+                'icon' => 'fa-play',
+                'color' => 'blue',
             ],
             'transferred_back' => [
                 'message' => "🏭 Dies transferred back to Production: {$label} by {$actor}",

@@ -22,7 +22,7 @@ class ProductionLogController extends Controller
      */
     public function index(Request $request)
     {
-        $logs = ProductionLog::with(['die:id,part_number,part_name,qty_die', 'createdBy:id,name'])
+        $logs = ProductionLog::with(['die:id,part_number,part_name,qty_die,machine_model_id', 'die.machineModel:id,code', 'createdBy:id,name'])
             ->when($request->date_from, fn($q, $date) => $q->where('production_date', '>=', $date))
             ->when($request->date_to, fn($q, $date) => $q->where('production_date', '<=', $date))
             ->when($request->die_id, fn($q, $dieId) => $q->where('die_id', $dieId))

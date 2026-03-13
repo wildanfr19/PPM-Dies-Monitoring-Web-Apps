@@ -67,7 +67,7 @@ export default function ProductionEdit({ auth, log, dies }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('production.update', log.id));
+        put(route('production.update', log.encrypted_id));
     };
 
     // Auto-fill line when die is selected

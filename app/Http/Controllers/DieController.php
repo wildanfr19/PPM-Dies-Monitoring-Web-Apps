@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DieModel;
+use App\Models\DieProcess;
 use App\Models\Customer;
 use App\Models\MachineModel;
 use App\Services\DieMonitoringService;
@@ -33,6 +34,7 @@ class DieController extends Controller
         $paginator->through(function ($die) {
             return [
                 'id' => $die->id,
+                'encrypted_id' => $die->encrypted_id,
                 'part_number' => $die->part_number,
                 'part_name' => $die->part_name,
                 'customer' => $die->customer?->code,
@@ -145,6 +147,7 @@ class DieController extends Controller
             'customer',
             'productionLogs' => fn($q) => $q->orderByDesc('production_date')->limit(50),
             'ppmHistories' => fn($q) => $q->orderByDesc('ppm_date'),
+            'dieProcesses',
         ]);
 
         // Build schedule info: prioritize dies table fields, fallback to ppm_schedules table
@@ -196,6 +199,7 @@ class DieController extends Controller
         return Inertia::render('Dies/Show', [
             'die' => [
                 'id' => $die->id,
+                'encrypted_id' => $die->encrypted_id,
                 'part_number' => $die->part_number,
                 'part_name' => $die->part_name,
                 'customer' => $die->customer,
@@ -246,6 +250,28 @@ class DieController extends Controller
                 'ppm_finished_at' => $die->ppm_finished_at?->format('d-M-Y H:i'),
                 'ppm_total_days' => $die->ppm_total_days,
                 'is_4lot_check' => $die->is_4lot_check,
+                // Multi-process PPM
+                'die_processes' => $die->dieProcesses->map(fn($p) => [
+                    'id' => $p->id,
+                    'encrypted_id' => $p->encrypted_id,
+                    'process_type' => $p->process_type,
+                    'process_label' => $p->process_label,
+                    'process_order' => $p->process_order,
+                    'ppm_status' => $p->ppm_status,
+                    'status_label' => $p->status_label,
+                    'ppm_started_at' => $p->ppm_started_at?->format('d-M-Y H:i'),
+                    'ppm_completed_at' => $p->ppm_completed_at?->format('d-M-Y H:i'),
+                    'completed_by' => $p->completed_by,
+                    'notes' => $p->notes,
+                ]),
+                'ppm_process_progress' => $die->ppm_process_progress,
+                // Remarks
+                'schedule_remark' => $die->schedule_remark,
+                'schedule_change_reason' => $die->schedule_change_reason,
+                'mtn_remark' => $die->mtn_remark,
+                'ppic_remark' => $die->ppic_remark,
+                'schedule_cancelled_at' => $die->schedule_cancelled_at?->format('d-M-Y H:i'),
+                'schedule_cancelled_by' => $die->schedule_cancelled_by,
             ],
         ]);
     }
@@ -331,6 +357,7 @@ class DieController extends Controller
     /**
      * Schedule PPM for the specified die (after Orange Alert)
      * Flow: Orange Alert → MTN Dies: Create Schedule of PPM
+     * Now supports schedule_remark
      */
     public function schedulePpm(Request $request, DieModel $die)
     {
@@ -339,9 +366,10 @@ class DieController extends Controller
             'plan_week' => 'nullable|string|max:20',
             'pic' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
+            'schedule_remark' => 'nullable|string|max:1000',
         ]);
 
-        $this->monitoringService->schedulePpm($die, $validated);
+        $this->monitoringService->schedulePpmWithRemark($die, $validated);
 
         return redirect()->back()
             ->with('success', 'PPM has been scheduled successfully.');
@@ -362,13 +390,20 @@ class DieController extends Controller
     /**
      * Start PPM Processing for the specified die
      * Flow: MTN Dies starts PPM Processing
+     * Now supports multi-process type selection
      */
-    public function startPpmProcessing(DieModel $die)
+    public function startPpmProcessing(Request $request, DieModel $die)
     {
-        $this->monitoringService->startPpmProcessing($die);
+        $validated = $request->validate([
+            'process_types' => 'nullable|array',
+            'process_types.*' => 'in:blank_pierce,draw,embos,trim,form,flang,restrike,pierce,cam_pierce',
+        ]);
+
+        $this->monitoringService->startPpmProcessing($die, $validated['process_types'] ?? []);
 
         return redirect()->back()
-            ->with('success', 'PPM Processing has been started.');
+            ->with('success', 'PPM Processing has been started.' .
+                (!empty($validated['process_types']) ? ' ' . count($validated['process_types']) . ' processes initialized.' : ''));
     }
 
     /**
@@ -444,6 +479,108 @@ class DieController extends Controller
 
         return redirect()->back()
             ->with('success', 'PPM processing resumed after additional repair.');
+    }
+
+    /**
+     * Cancel PPM Schedule with reason
+     */
+    public function cancelSchedule(Request $request, DieModel $die)
+    {
+        $validated = $request->validate([
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $this->monitoringService->cancelPpmSchedule($die, $validated);
+
+        return redirect()->back()
+            ->with('success', 'PPM Schedule cancelled.');
+    }
+
+    /**
+     * Reschedule PPM with change reason
+     */
+    public function reschedule(Request $request, DieModel $die)
+    {
+        $validated = $request->validate([
+            'scheduled_date' => 'required|date',
+            'pic' => 'nullable|string|max:100',
+            'reason' => 'nullable|string|max:1000',
+            'schedule_remark' => 'nullable|string|max:1000',
+        ]);
+
+        $this->monitoringService->reschedulePpm($die, $validated);
+
+        return redirect()->back()
+            ->with('success', 'PPM rescheduled successfully.');
+    }
+
+    /**
+     * Complete a specific process within multi-process PPM
+     */
+    public function completeProcess(Request $request, DieProcess $process)
+    {
+        $validated = $request->validate([
+            'ppm_date' => 'required|date',
+            'pic' => 'required|string|max:100',
+            'maintenance_type' => 'required|in:routine,repair,overhaul,emergency',
+            'checklist_results' => 'nullable|array',
+            'checklist_results.*.item_no' => 'required|integer',
+            'checklist_results.*.description' => 'required|string',
+            'checklist_results.*.result' => 'required|in:normal,unusual',
+            'checklist_results.*.remark' => 'nullable|string',
+            'work_performed' => 'nullable|string',
+            'parts_replaced' => 'nullable|string',
+            'findings' => 'nullable|string',
+            'recommendations' => 'nullable|string',
+            'checked_by' => 'nullable|string|max:100',
+            'approved_by' => 'nullable|string|max:100',
+        ]);
+
+        $this->monitoringService->completeProcess($process, $validated);
+
+        return redirect()->back()
+            ->with('success', "Process {$process->process_label} completed.");
+    }
+
+    /**
+     * Start a specific process within multi-process PPM
+     */
+    public function startProcess(DieProcess $process)
+    {
+        $this->monitoringService->startProcess($process);
+
+        return redirect()->back()
+            ->with('success', "Process {$process->process_label} started.");
+    }
+
+    /**
+     * Update MTN Dies remark
+     */
+    public function updateMtnRemark(Request $request, DieModel $die)
+    {
+        $validated = $request->validate([
+            'mtn_remark' => 'required|string|max:2000',
+        ]);
+
+        $this->monitoringService->updateMtnRemark($die, $validated['mtn_remark']);
+
+        return redirect()->back()
+            ->with('success', 'MTN Dies remark updated.');
+    }
+
+    /**
+     * Update PPIC remark
+     */
+    public function updatePpicRemark(Request $request, DieModel $die)
+    {
+        $validated = $request->validate([
+            'ppic_remark' => 'required|string|max:2000',
+        ]);
+
+        $this->monitoringService->updatePpicRemark($die, $validated['ppic_remark']);
+
+        return redirect()->back()
+            ->with('success', 'PPIC remark updated.');
     }
 
     /**

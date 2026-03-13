@@ -133,6 +133,7 @@ class ScheduleController extends Controller
 
             $grouped[$groupKey]['dies'][] = [
                 'id' => $die->id,
+                'encrypted_id' => $die->encrypted_id,
                 'part_number' => $die->part_number,
                 'part_name' => $die->part_name,
                 'model' => $die->machineModel?->code,

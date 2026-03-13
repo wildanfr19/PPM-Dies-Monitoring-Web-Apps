@@ -155,7 +155,7 @@ export default function Index({ auth, repairs, stats, filters }) {
                                         <tr key={repair.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                             <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
                                             <td className="px-4 py-3">
-                                                <Link href={route('special-repair.show', repair.id)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                                                <Link href={route('special-repair.show', repair.encrypted_id)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">
                                                     {repair.part_number}
                                                 </Link>
                                                 <p className="text-xs text-gray-400">{repair.part_name}</p>
@@ -183,7 +183,7 @@ export default function Index({ auth, repairs, stats, filters }) {
                                             <td className="px-4 py-3 text-center text-xs">{repair.delivery_deadline || '-'}</td>
                                             <td className="px-4 py-3 text-center text-xs">{repair.requested_at}</td>
                                             <td className="px-4 py-3 text-center">
-                                                <Link href={route('special-repair.show', repair.id)} className="text-blue-600 hover:text-blue-800 text-sm">
+                                                <Link href={route('special-repair.show', repair.encrypted_id)} className="text-blue-600 hover:text-blue-800 text-sm">
                                                     <i className="fas fa-eye"></i>
                                                 </Link>
                                             </td>

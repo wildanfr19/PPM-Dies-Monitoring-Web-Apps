@@ -30,7 +30,7 @@ export default function ProductionShow({ auth, log }) {
                                     </p>
                                 </div>
                                 <Link
-                                    href={route('production.edit', log.id)}
+                                    href={route('production.edit', log.encrypted_id)}
                                     className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition"
                                 >
                                     ✏️ Edit
@@ -47,7 +47,7 @@ export default function ProductionShow({ auth, log }) {
                                     <div>
                                         <p className="text-xs text-gray-500 dark:text-gray-400">Part Number</p>
                                         <Link
-                                            href={route('dies.show', log.die_id)}
+                                            href={route('dies.show', log.die?.encrypted_id)}
                                             className="text-lg font-semibold text-blue-600 hover:text-blue-800"
                                         >
                                             {log.die?.part_number}
@@ -206,7 +206,7 @@ export default function ProductionShow({ auth, log }) {
                             </Link>
                             <div className="flex gap-2">
                                 <Link
-                                    href={route('production.edit', log.id)}
+                                    href={route('production.edit', log.encrypted_id)}
                                     className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
                                 >
                                     ✏️ Edit

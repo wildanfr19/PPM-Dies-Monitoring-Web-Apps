@@ -113,7 +113,7 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     <span className="text-gray-400 text-xs w-4">{idx + 1}.</span>
                                                     <Link
-                                                        href={route('dies.show', die.id)}
+                                                        href={route('dies.show', die.encrypted_id)}
                                                         className="text-blue-600 hover:text-blue-800 font-medium truncate"
                                                         title={die.part_number}
                                                     >
@@ -218,7 +218,7 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                                     {ppmTimeline.map((item) => (
                                         <tr key={item.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${item.is_overdue ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                                             <td className="px-3 py-2">
-                                                <Link href={route('dies.show', item.id)} className="text-blue-600 hover:text-blue-800 font-medium">
+                                                <Link href={route('dies.show', item.encrypted_id)} className="text-blue-600 hover:text-blue-800 font-medium">
                                                     {item.part_number}
                                                 </Link>
                                             </td>
@@ -312,7 +312,7 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                                                 <tr key={die.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                     <td className="px-3 py-2">
                                                         <Link
-                                                            href={route('dies.show', die.id)}
+                                                            href={route('dies.show', die.encrypted_id)}
                                                             className="text-blue-600 hover:text-blue-800 font-medium"
                                                         >
                                                             {die.part_number}
@@ -378,7 +378,7 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                                                 <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                     <td className="px-3 py-2">
                                                         <Link
-                                                            href={route('dies.show', item.die. id)}
+                                                            href={route('dies.show', item.die.encrypted_id)}
                                                             className="text-blue-600 hover:text-blue-800 font-medium"
                                                         >
                                                             {item.die.part_number}
@@ -489,7 +489,7 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                                     {activeSpecialRepairs.map((repair) => (
                                         <tr key={repair.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                             <td className="px-3 py-2">
-                                                <Link href={route('special-repair.show', repair.id)} className="text-blue-600 hover:text-blue-800 font-medium">
+                                                <Link href={route('special-repair.show', repair.encrypted_id)} className="text-blue-600 hover:text-blue-800 font-medium">
                                                     {repair.part_number}
                                                 </Link>
                                             </td>

@@ -19,17 +19,17 @@ export default function Show({ auth, repair }) {
 
     const handleApprove = () => {
         if (confirm('Approve this special repair request?')) {
-            router.post(route('special-repair.approve', repair.id));
+            router.post(route('special-repair.approve', repair.encrypted_id));
         }
     };
 
     const handleStartRepair = () => {
-        router.post(route('special-repair.start', repair.id), { pic });
+        router.post(route('special-repair.start', repair.encrypted_id), { pic });
     };
 
     const handleComplete = (e) => {
         e.preventDefault();
-        router.post(route('special-repair.complete', repair.id), {
+        router.post(route('special-repair.complete', repair.encrypted_id), {
             work_performed: workPerformed,
             parts_replaced: partsReplaced,
             findings,
@@ -40,7 +40,7 @@ export default function Show({ auth, repair }) {
 
     const handleReject = (e) => {
         e.preventDefault();
-        router.post(route('special-repair.reject', repair.id), { notes: rejectNotes });
+        router.post(route('special-repair.reject', repair.encrypted_id), { notes: rejectNotes });
     };
 
     const statusColors = {
@@ -116,7 +116,7 @@ export default function Show({ auth, repair }) {
                             <i className="fas fa-info-circle text-blue-500 mr-1"></i> Die Information
                         </h4>
                         <div className="space-y-2 text-sm">
-                            <div className="flex justify-between"><span className="text-gray-500">Part Number</span><Link href={route('dies.show', repair.die?.id)} className="text-blue-600 font-medium">{repair.die?.part_number}</Link></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Part Number</span><Link href={route('dies.show', repair.die?.encrypted_id)} className="text-blue-600 font-medium">{repair.die?.part_number}</Link></div>
                             <div className="flex justify-between"><span className="text-gray-500">Part Name</span><span>{repair.die?.part_name}</span></div>
                             <div className="flex justify-between"><span className="text-gray-500">Customer</span><span>{repair.die?.customer?.code}</span></div>
                             <div className="flex justify-between"><span className="text-gray-500">Tonnage</span><span>{repair.die?.tonnage}</span></div>

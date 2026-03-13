@@ -840,7 +840,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <Link
-                                                    href={route('dies.show', { die: die.id })}
+                                                    href={route('dies.show', { die: die.encrypted_id })}
                                                     className="text-blue-600 hover:text-blue-800 font-medium text-sm"
                                                 >
                                                     {die.part_number}
@@ -962,7 +962,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <Link
-                                                        href={route('dies.show', { die: die.id })}
+                                                        href={route('dies.show', { die: die.encrypted_id })}
                                                         className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 transition dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
                                                     >
                                                         <i className="fas fa-eye"></i>
@@ -970,7 +970,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                     </Link>
                                                     {canEditDies && (
                                                         <Link
-                                                            href={route('dies.edit', { die: die.id })}
+                                                            href={route('dies.edit', { die: die.encrypted_id })}
                                                             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-yellow-700 bg-yellow-50 rounded-md hover:bg-yellow-100 transition dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50"
                                                         >
                                                             <i className="fas fa-edit"></i>
@@ -1094,7 +1094,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                         </td>
                                         <td className="px-3 py-2 whitespace-nowrap">
                                             <Link
-                                                href={route('dies.show', { die: die.id })}
+                                                href={route('dies.show', { die: die.encrypted_id })}
                                                 className="text-blue-600 hover:text-blue-800 font-medium text-sm"
                                             >
                                                 {die.part_number}
@@ -1145,7 +1145,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                         <td className="px-3 py-2 text-center">
                                             <div className="flex items-center justify-center gap-1">
                                                 <Link
-                                                    href={route('dies.show', { die: die.id })}
+                                                    href={route('dies.show', { die: die.encrypted_id })}
                                                     className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition dark:hover:bg-blue-900/30"
                                                     title="Detail"
                                                 >
@@ -1153,7 +1153,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                 </Link>
                                                 {canEditDies && (
                                                     <Link
-                                                        href={route('dies.edit', { die: die.id })}
+                                                        href={route('dies.edit', { die: die.encrypted_id })}
                                                         className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded transition dark:hover:bg-yellow-900/30"
                                                         title="Edit"
                                                     >

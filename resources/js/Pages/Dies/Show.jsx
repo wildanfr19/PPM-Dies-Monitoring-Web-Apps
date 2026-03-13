@@ -10,12 +10,21 @@ export default function DieShow({ auth, die }) {
     const [showPpmModal, setShowPpmModal] = useState(false);
     const [showLotDateModal, setShowLotDateModal] = useState(false);
     const [showTransferModal, setShowTransferModal] = useState(false);
+    const [showStartPpmModal, setShowStartPpmModal] = useState(false);
+    const [showCancelScheduleModal, setShowCancelScheduleModal] = useState(false);
+    const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+    const [selectedProcessTypes, setSelectedProcessTypes] = useState([]);
+    const [activeProcess, setActiveProcess] = useState(null); // Track which process is being completed
 
     // Check roles
     const canEditDies = ['admin', 'mtn_dies'].includes(auth.user.role);
     const isPpic = ['admin', 'ppic'].includes(auth.user.role);
     const isProd = ['admin', 'production'].includes(auth.user.role);
     const isMtnDies = ['admin', 'mtn_dies'].includes(auth.user.role);
+
+    // Check if multi-process PPM is active (has processes that are not all completed)
+    const hasActiveProcesses = die.die_processes && die.die_processes.length > 0 &&
+        !die.ppm_process_progress?.all_completed;
 
     const { data, setData, post, processing, errors, reset } = useForm({
         ppm_date: new Date().toISOString().split('T')[0],
@@ -57,19 +66,71 @@ export default function DieShow({ auth, die }) {
         transferred_by: auth.user.name,
     });
 
+    // MTN Dies: Cancel Schedule form
+    const cancelScheduleForm = useForm({
+        reason: '',
+    });
+
+    // MTN Dies: Reschedule form
+    const rescheduleForm = useForm({
+        new_date: '',
+        reason: '',
+    });
+
+    // MTN Dies: Remark form
+    const mtnRemarkForm = useForm({
+        mtn_remark: die.mtn_remark || '',
+    });
+
+    // PPIC: Remark form
+    const ppicRemarkForm = useForm({
+        ppic_remark: die.ppic_remark || '',
+    });
+
     const handleRecordPpm = (e) => {
         e.preventDefault();
-        post(route('dies.record-ppm', { die: die.id }), {
-            onSuccess: () => {
-                setShowPpmModal(false);
-                reset();
-            },
+        if (activeProcess) {
+            // Completing a specific process — post to process-complete route
+            post(route('dies.process-complete', { process: activeProcess.encrypted_id }), {
+                onSuccess: () => {
+                    setShowPpmModal(false);
+                    setActiveProcess(null);
+                    reset();
+                },
+            });
+        } else {
+            // Legacy: record PPM without multi-process
+            post(route('dies.record-ppm', { die: die.encrypted_id }), {
+                onSuccess: () => {
+                    setShowPpmModal(false);
+                    reset();
+                },
+            });
+        }
+    };
+
+    const openProcessCompleteModal = (proc) => {
+        setActiveProcess(proc);
+        setData({
+            ...data,
+            ppm_date: new Date().toISOString().split('T')[0],
+            pic: auth.user.name,
+            maintenance_type: 'routine',
+            process_type: proc.process_type,
+            checklist_results: initializeChecklistResults(proc.process_type),
+            work_performed: '',
+            parts_replaced: '',
+            findings: '',
+            recommendations: '',
+            checked_by: '',
+            approved_by: '',
         });
+        setShowPpmModal(true);
     };
 
     const handleSetLotDate = (e) => {
         e.preventDefault();
-        lotDateForm.post(route('dies.set-last-lot-date', { die: die.id }), {
+        lotDateForm.post(route('dies.set-last-lot-date', { die: die.encrypted_id }), {
             onSuccess: () => {
                 setShowLotDateModal(false);
                 lotDateForm.reset();
@@ -79,12 +140,60 @@ export default function DieShow({ auth, die }) {
 
     const handleTransferDies = (e) => {
         e.preventDefault();
-        transferForm.post(route('dies.transfer', { die: die.id }), {
+        transferForm.post(route('dies.transfer', { die: die.encrypted_id }), {
             onSuccess: () => {
                 setShowTransferModal(false);
                 transferForm.reset();
             },
         });
+    };
+
+    const handleStartPpmWithProcesses = (e) => {
+        e.preventDefault();
+        router.post(route('dies.start-ppm', { die: die.encrypted_id }), {
+            process_types: selectedProcessTypes,
+        }, {
+            onSuccess: () => {
+                setShowStartPpmModal(false);
+                setSelectedProcessTypes([]);
+            },
+        });
+    };
+
+    const toggleProcessType = (value) => {
+        setSelectedProcessTypes(prev =>
+            prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
+        );
+    };
+
+    const handleCancelSchedule = (e) => {
+        e.preventDefault();
+        cancelScheduleForm.post(route('dies.cancel-schedule', { die: die.encrypted_id }), {
+            onSuccess: () => {
+                setShowCancelScheduleModal(false);
+                cancelScheduleForm.reset();
+            },
+        });
+    };
+
+    const handleReschedule = (e) => {
+        e.preventDefault();
+        rescheduleForm.post(route('dies.reschedule', { die: die.encrypted_id }), {
+            onSuccess: () => {
+                setShowRescheduleModal(false);
+                rescheduleForm.reset();
+            },
+        });
+    };
+
+    const handleUpdateMtnRemark = (e) => {
+        e.preventDefault();
+        mtnRemarkForm.post(route('dies.mtn-remark', { die: die.encrypted_id }));
+    };
+
+    const handleUpdatePpicRemark = (e) => {
+        e.preventDefault();
+        ppicRemarkForm.post(route('dies.ppic-remark', { die: die.encrypted_id }));
     };
 
     const getStatusColor = (status) => {
@@ -129,10 +238,10 @@ export default function DieShow({ auth, die }) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {canEditDies && (
+                        {canEditDies && !hasActiveProcesses && (
                             <>
                                 <Link
-                                    href={route('dies.edit', { die: die.id })}
+                                    href={route('dies.edit', { die: die.encrypted_id })}
                                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition dark:bg-gray-700 dark:text-gray-300"
                                 >
                                     ✏️ Edit
@@ -171,7 +280,7 @@ export default function DieShow({ auth, die }) {
                                         confirmText: '✅ Ya, Confirm',
                                         confirmColor: '#0891b2',
                                     });
-                                    if (ok) router.post(route('dies.approve-schedule', { die: die.id }));
+                                    if (ok) router.post(route('dies.approve-schedule', { die: die.encrypted_id }));
                                 }}
                                 className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition"
                             >
@@ -187,19 +296,28 @@ export default function DieShow({ auth, die }) {
                                 🚚 Transfer to MTN Dies
                             </button>
                         )}
+                        {/* MTN Dies: Cancel Schedule */}
+                        {isMtnDies && die.ppm_scheduled_date && ['ppm_scheduled', 'schedule_approved'].includes(die.ppm_alert_status) && (
+                            <button
+                                onClick={() => setShowCancelScheduleModal(true)}
+                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                            >
+                                ❌ Cancel Schedule
+                            </button>
+                        )}
+                        {/* MTN Dies: Reschedule */}
+                        {isMtnDies && die.ppm_scheduled_date && ['ppm_scheduled', 'schedule_approved'].includes(die.ppm_alert_status) && (
+                            <button
+                                onClick={() => setShowRescheduleModal(true)}
+                                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
+                            >
+                                🔄 Reschedule PPM
+                            </button>
+                        )}
                         {/* MTN Dies: Start PPM Processing */}
                         {isMtnDies && die.ppm_alert_status === 'transferred_to_mtn' && (
                             <button
-                                onClick={async () => {
-                                    const ok = await confirmAction({
-                                        title: 'Mulai Proses PPM?',
-                                        text: `Mulai proses PPM untuk die ${die.part_number}. Status akan berubah menjadi "PPM In Progress".`,
-                                        icon: 'question',
-                                        confirmText: '▶️ Ya, Mulai PPM',
-                                        confirmColor: '#2563eb',
-                                    });
-                                    if (ok) router.post(route('dies.start-ppm', { die: die.id }));
-                                }}
+                                onClick={() => setShowStartPpmModal(true)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                             >
                                 ▶️ Start PPM Processing
@@ -216,7 +334,7 @@ export default function DieShow({ auth, die }) {
                                         confirmText: '🔧 Ya, Butuh Repair',
                                         confirmColor: '#d97706',
                                     });
-                                    if (ok) router.post(route('dies.additional-repair', { die: die.id }));
+                                    if (ok) router.post(route('dies.additional-repair', { die: die.encrypted_id }));
                                 }}
                                 className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition"
                             >
@@ -234,7 +352,7 @@ export default function DieShow({ auth, die }) {
                                         confirmText: '▶️ Ya, Lanjutkan',
                                         confirmColor: '#2563eb',
                                     });
-                                    if (ok) router.post(route('dies.resume-ppm', { die: die.id }));
+                                    if (ok) router.post(route('dies.resume-ppm', { die: die.encrypted_id }));
                                 }}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                             >
@@ -252,7 +370,7 @@ export default function DieShow({ auth, die }) {
                                         confirmText: '🏭 Ya, Transfer Kembali',
                                         confirmColor: '#16a34a',
                                     });
-                                    if (ok) router.post(route('dies.transfer-back', { die: die.id }));
+                                    if (ok) router.post(route('dies.transfer-back', { die: die.encrypted_id }));
                                 }}
                                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                             >
@@ -328,16 +446,6 @@ export default function DieShow({ auth, die }) {
                                 <div className="flex justify-between">
                                     <dt className="text-gray-500 dark:text-gray-400">Last PPM</dt>
                                     <dd className="font-medium text-gray-900 dark: text-gray-100">{die.last_ppm_date || '-'}</dd>
-                                </div>
-                                <div className="flex justify-between">
-                                    <dt className="text-gray-500 dark:text-gray-400">Process</dt>
-                                    <dd className="font-medium text-gray-900 dark:text-gray-100">
-                                        {die.process_type ? (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
-                                                {getProcessTypeLabel(die.process_type)}
-                                            </span>
-                                        ) : '-'}
-                                    </dd>
                                 </div>
                             </dl>
                         </div>
@@ -459,7 +567,184 @@ export default function DieShow({ auth, die }) {
                                             )}
                                         </div>
                                     )}
+
+                                    {/* Schedule Cancelled Info */}
+                                    {die.schedule_cancelled_at && (
+                                        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                            <p className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase mb-1">
+                                                ❌ Schedule Cancelled
+                                            </p>
+                                            <p className="text-sm text-red-900 dark:text-red-100">
+                                                {die.schedule_cancelled_at}
+                                                {die.schedule_cancelled_by && <span className="ml-1">by {die.schedule_cancelled_by}</span>}
+                                            </p>
+                                            {die.schedule_change_reason && (
+                                                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                    Reason: {die.schedule_change_reason}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Schedule Remark */}
+                                    {die.schedule_remark && (
+                                        <div className="p-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg">
+                                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">
+                                                📝 Schedule Remark
+                                            </p>
+                                            <p className="text-sm text-gray-900 dark:text-gray-100">{die.schedule_remark}</p>
+                                        </div>
+                                    )}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Multi-Process PPM Progress Card */}
+                        {die.die_processes && die.die_processes.length > 0 && (
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                    ⚙️ PPM Process Progress
+                                </h3>
+
+                                {/* Progress Summary */}
+                                {die.ppm_process_progress && (
+                                    <div className="mb-4">
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-gray-600 dark:text-gray-400">
+                                                {die.ppm_process_progress.completed}/{die.ppm_process_progress.total} processes completed
+                                            </span>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                                {die.ppm_process_progress.percentage}%
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
+                                            <div
+                                                className={`h-3 rounded-full transition-all ${
+                                                    die.ppm_process_progress.all_completed ? 'bg-green-500' : 'bg-blue-500'
+                                                }`}
+                                                style={{ width: `${die.ppm_process_progress.percentage}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Process List */}
+                                <div className="space-y-2">
+                                    {die.die_processes.map((proc) => (
+                                        <div key={proc.id} className={`flex items-center justify-between p-3 rounded-lg border ${
+                                            proc.ppm_status === 'completed' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' :
+                                            proc.ppm_status === 'in_progress' ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' :
+                                            'bg-gray-50 border-gray-200 dark:bg-gray-700/50 dark:border-gray-600'
+                                        }`}>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                                                    proc.ppm_status === 'completed' ? 'bg-green-500 text-white' :
+                                                    proc.ppm_status === 'in_progress' ? 'bg-blue-500 text-white' :
+                                                    'bg-gray-300 text-gray-600 dark:bg-gray-500 dark:text-gray-200'
+                                                }`}>{proc.process_order}</span>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{proc.process_label}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {proc.ppm_status === 'completed' && proc.ppm_completed_at && `Completed: ${proc.ppm_completed_at}`}
+                                                        {proc.ppm_status === 'in_progress' && proc.ppm_started_at && `Started: ${proc.ppm_started_at}`}
+                                                        {proc.ppm_status === 'pending' && 'Pending'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                    proc.ppm_status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                                                    proc.ppm_status === 'in_progress' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                                    'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200'
+                                                }`}>{proc.status_label}</span>
+                                                {/* Action buttons for MTN Dies */}
+                                                {isMtnDies && proc.ppm_status === 'pending' && ['ppm_in_progress', 'additional_repair'].includes(die.ppm_alert_status) && (
+                                                    <button
+                                                        onClick={async () => {
+                                                            const ok = await confirmAction({
+                                                                title: 'Mulai Proses?',
+                                                                text: `Mulai proses "${proc.process_label}" untuk die ${die.part_number}?`,
+                                                                icon: 'question',
+                                                                confirmText: '▶️ Ya, Mulai',
+                                                                confirmColor: '#2563eb',
+                                                            });
+                                                            if (ok) router.post(route('dies.process-start', { process: proc.encrypted_id }));
+                                                        }}
+                                                        className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition"
+                                                    >
+                                                        ▶️ Start
+                                                    </button>
+                                                )}
+                                                {isMtnDies && proc.ppm_status === 'in_progress' && (
+                                                    <button
+                                                        onClick={() => openProcessCompleteModal(proc)}
+                                                        className="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition"
+                                                    >
+                                                        📝 Complete & Record
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* MTN Dies Remark */}
+                        {(isMtnDies || die.mtn_remark) && die.ppm_alert_status && (
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                    🔧 MTN Dies Remark
+                                </h3>
+                                {isMtnDies ? (
+                                    <form onSubmit={handleUpdateMtnRemark} className="space-y-3">
+                                        <textarea
+                                            value={mtnRemarkForm.data.mtn_remark}
+                                            onChange={(e) => mtnRemarkForm.setData('mtn_remark', e.target.value)}
+                                            rows="3"
+                                            placeholder="Catatan dari MTN Dies..."
+                                            className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={mtnRemarkForm.processing}
+                                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                                        >
+                                            {mtnRemarkForm.processing ? 'Saving...' : '💾 Save Remark'}
+                                        </button>
+                                    </form>
+                                ) : die.mtn_remark ? (
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">{die.mtn_remark}</p>
+                                ) : null}
+                            </div>
+                        )}
+
+                        {/* PPIC Remark */}
+                        {(isPpic || die.ppic_remark) && die.ppm_alert_status && (
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                    📋 PPIC Remark
+                                </h3>
+                                {isPpic ? (
+                                    <form onSubmit={handleUpdatePpicRemark} className="space-y-3">
+                                        <textarea
+                                            value={ppicRemarkForm.data.ppic_remark}
+                                            onChange={(e) => ppicRemarkForm.setData('ppic_remark', e.target.value)}
+                                            rows="3"
+                                            placeholder="Catatan dari PPIC..."
+                                            className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={ppicRemarkForm.processing}
+                                            className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
+                                        >
+                                            {ppicRemarkForm.processing ? 'Saving...' : '💾 Save Remark'}
+                                        </button>
+                                    </form>
+                                ) : die.ppic_remark ? (
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">{die.ppic_remark}</p>
+                                ) : null}
                             </div>
                         )}
                     </div>
@@ -814,14 +1099,22 @@ export default function DieShow({ auth, die }) {
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                                        📝 INSPECTION CHECK PPM DIES
+                                        {activeProcess
+                                            ? `📝 INSPECTION CHECK — ${activeProcess.process_label}`
+                                            : '📝 INSPECTION CHECK PPM DIES'
+                                        }
                                     </h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                         {die.part_number} — {die.part_name}
+                                        {activeProcess && (
+                                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                Process {activeProcess.process_order} of {die.die_processes?.length}
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
                                 <button
-                                    onClick={() => setShowPpmModal(false)}
+                                    onClick={() => { setShowPpmModal(false); setActiveProcess(null); }}
                                     className="text-gray-500 hover:text-gray-700 text-2xl"
                                 >
                                     ✕
@@ -916,8 +1209,9 @@ export default function DieShow({ auth, die }) {
                                         <select
                                             value={data.process_type}
                                             onChange={(e) => setData('process_type', e.target.value)}
-                                            className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm font-semibold"
+                                            className={`w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm font-semibold ${activeProcess ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
                                             required
+                                            disabled={!!activeProcess}
                                         >
                                             <option value="">-- Select Process --</option>
                                             {PROCESS_TYPES.map((p) => (
@@ -926,6 +1220,11 @@ export default function DieShow({ auth, die }) {
                                                 </option>
                                             ))}
                                         </select>
+                                        {activeProcess && (
+                                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                                🔒 Process type locked — completing: {activeProcess.process_label}
+                                            </p>
+                                        )}
                                         {errors.process_type && <p className="text-red-500 text-xs mt-1">{errors.process_type}</p>}
                                     </div>
                                 </div>
@@ -1109,7 +1408,7 @@ export default function DieShow({ auth, die }) {
                                 <div className="flex justify-end gap-3 pt-4">
                                     <button
                                         type="button"
-                                        onClick={() => setShowPpmModal(false)}
+                                        onClick={() => { setShowPpmModal(false); setActiveProcess(null); }}
                                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
                                     >
                                         Cancel
@@ -1120,7 +1419,7 @@ export default function DieShow({ auth, die }) {
                                         className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                         title={(data.checklist_results.length > 0 && data.checklist_results.some(c => !c.result)) ? 'Semua checklist item harus diisi terlebih dahulu' : ''}
                                     >
-                                        {processing ? 'Saving...' : '✓ Record PPM'}
+                                        {processing ? 'Saving...' : activeProcess ? `✓ Complete ${activeProcess.process_label}` : '✓ Record PPM'}
                                     </button>
                                     {data.checklist_results.length > 0 && data.checklist_results.some(c => !c.result) && (
                                         <p className="text-xs text-red-500 mt-1">
@@ -1286,6 +1585,223 @@ export default function DieShow({ auth, die }) {
                                         className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
                                     >
                                         {transferForm.processing ? 'Processing...' : '✓ Confirm Transfer'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MTN Dies: Start PPM with Process Selection Modal */}
+            {showStartPpmModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-4">
+                        <div className="p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                    ▶️ Start PPM Processing
+                                </h3>
+                                <button
+                                    onClick={() => setShowStartPpmModal(false)}
+                                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                                <p className="text-sm text-blue-800 dark:text-blue-200">
+                                    <strong>ℹ️ Info:</strong> Die ini memiliki <strong>{die.qty_die}</strong> proses (qty die).
+                                    Pilih proses yang akan di-PPM. Setiap proses akan dilacak secara terpisah.
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleStartPpmWithProcesses} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                        Pilih Process Types untuk PPM:
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {PROCESS_TYPES.map((p) => (
+                                            <label key={p.value} className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition ${
+                                                selectedProcessTypes.includes(p.value)
+                                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400'
+                                                    : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                            }`}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedProcessTypes.includes(p.value)}
+                                                    onChange={() => toggleProcessType(p.value)}
+                                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{p.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {selectedProcessTypes.length > 0 && (
+                                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                                            ✓ {selectedProcessTypes.length} process(es) selected
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowStartPpmModal(false)}
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                                    >
+                                        ▶️ Start PPM Processing
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MTN Dies: Cancel Schedule Modal */}
+            {showCancelScheduleModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+                        <div className="p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                    ❌ Cancel PPM Schedule
+                                </h3>
+                                <button
+                                    onClick={() => setShowCancelScheduleModal(false)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                                <p className="text-sm text-red-800 dark:text-red-200">
+                                    <strong>⚠️ Warning:</strong> Membatalkan jadwal PPM untuk die <strong>{die.part_number}</strong>.
+                                    Status akan dikembalikan dan perlu dijadwalkan ulang.
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleCancelSchedule} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Alasan Cancel *
+                                    </label>
+                                    <textarea
+                                        value={cancelScheduleForm.data.reason}
+                                        onChange={(e) => cancelScheduleForm.setData('reason', e.target.value)}
+                                        rows="3"
+                                        placeholder="Jelaskan alasan pembatalan jadwal PPM..."
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
+                                        required
+                                    />
+                                    {cancelScheduleForm.errors.reason && (
+                                        <p className="text-red-500 text-xs mt-1">{cancelScheduleForm.errors.reason}</p>
+                                    )}
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCancelScheduleModal(false)}
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={cancelScheduleForm.processing}
+                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                                    >
+                                        {cancelScheduleForm.processing ? 'Processing...' : '❌ Cancel Schedule'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MTN Dies: Reschedule PPM Modal */}
+            {showRescheduleModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+                        <div className="p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                    🔄 Reschedule PPM
+                                </h3>
+                                <button
+                                    onClick={() => setShowRescheduleModal(false)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                    <strong>ℹ️ Info:</strong> Jadwal PPM saat ini: <strong>{die.ppm_scheduled_date}</strong>.
+                                    Mengubah jadwal akan memerlukan approval ulang dari PPIC.
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleReschedule} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Tanggal Baru *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={rescheduleForm.data.new_date}
+                                        onChange={(e) => rescheduleForm.setData('new_date', e.target.value)}
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                        required
+                                    />
+                                    {rescheduleForm.errors.new_date && (
+                                        <p className="text-red-500 text-xs mt-1">{rescheduleForm.errors.new_date}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Alasan Perubahan *
+                                    </label>
+                                    <textarea
+                                        value={rescheduleForm.data.reason}
+                                        onChange={(e) => rescheduleForm.setData('reason', e.target.value)}
+                                        rows="3"
+                                        placeholder="Jelaskan alasan perubahan jadwal..."
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
+                                        required
+                                    />
+                                    {rescheduleForm.errors.reason && (
+                                        <p className="text-red-500 text-xs mt-1">{rescheduleForm.errors.reason}</p>
+                                    )}
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRescheduleModal(false)}
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={rescheduleForm.processing}
+                                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition disabled:opacity-50"
+                                    >
+                                        {rescheduleForm.processing ? 'Processing...' : '🔄 Reschedule'}
                                     </button>
                                 </div>
                             </form>

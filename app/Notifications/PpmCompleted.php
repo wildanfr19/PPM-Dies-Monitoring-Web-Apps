@@ -44,7 +44,7 @@ class PpmCompleted extends Notification
             ->line("- Stroke Before Reset: " . number_format($this->ppmHistory->stroke_at_ppm))
             ->line("")
             ->line("Stroke counter has been reset to 0.")
-            ->action('View Die Details', url("/dies/{$this->die->id}"))
+            ->action('View Die Details', url("/dies/{$this->die->encrypted_id}"))
             ->salutation('PPM Dies Monitoring System');
     }
 
@@ -52,7 +52,7 @@ class PpmCompleted extends Notification
     {
         return [
             'type' => 'ppm_completed',
-            'die_id' => $this->die->id,
+            'die_id' => $this->die->encrypted_id,
             'part_number' => $this->die->part_number,
             'part_name' => $this->die->part_name,
             'customer' => $this->die->customer?->code,
