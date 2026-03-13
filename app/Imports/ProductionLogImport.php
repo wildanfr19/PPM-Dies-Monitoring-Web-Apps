@@ -59,7 +59,7 @@ class ProductionLogImport implements ToModel, WithHeadingRow, WithValidation, Wi
                 'part_name' => $this->cleanValue($row['part_name'] ?? null, '-'),
                 'date' => $row['date'] ?? '-',
                 'output' => $rawOutput ?: '-',
-                'reason' => "Part number '{$partNumber}' tidak ditemukan di Dies Master",
+                'reason' => "Part number '{$partNumber}' not found in Dies Master",
             ];
             return null;
         }
@@ -73,7 +73,7 @@ class ProductionLogImport implements ToModel, WithHeadingRow, WithValidation, Wi
                 'part_name' => $die->part_name,
                 'date' => $row['date'] ?? '-',
                 'output' => $rawOutput ?: '-',
-                'reason' => "Format tanggal tidak valid: '" . ($row['date'] ?? '') . "'",
+                'reason' => "Invalid date format: '" . ($row['date'] ?? '') . "'",
             ];
             return null;
         }

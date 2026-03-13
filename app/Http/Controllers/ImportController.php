@@ -79,7 +79,7 @@ class ImportController extends Controller
             $accumulatedRows = $import->getAccumulatedRows();
             $errors = $import->errors();
 
-            $message = "Berhasil import {$imported} data production log.";
+            $message = "Successfully imported {$imported} production log data.";
 
             if ($accumulated > 0) {
                 $message .= " {$accumulated} data diakumulasi (part number, tanggal & shift sama).";
@@ -102,7 +102,7 @@ class ImportController extends Controller
 
         } catch (\Exception $e) {
             return redirect()->route('import.index')
-                ->with('error', 'Import gagal: ' . $e->getMessage());
+                ->with('error', 'Import failed: ' . $e->getMessage());
         }
     }
 

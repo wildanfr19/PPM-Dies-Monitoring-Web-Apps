@@ -676,7 +676,7 @@ class DieController extends Controller
         }
 
         return redirect()->back()
-            ->with('success', "{$count} die berhasil dimulai proses PPM-nya.");
+            ->with('success', "{$count} die PPM process started successfully.");
     }
 
     /**
@@ -708,7 +708,7 @@ class DieController extends Controller
         }
 
         return redirect()->back()
-            ->with('success', "{$count} die berhasil ditransfer ke lokasi MTN Dies.");
+            ->with('success', "{$count} die successfully transferred to MTN Dies.");
     }
 
     /**
@@ -727,7 +727,7 @@ class DieController extends Controller
 
         if ($dies->isEmpty()) {
             return redirect()->back()
-                ->with('error', 'Tidak ada die yang memenuhi syarat untuk transfer kembali ke Production.');
+                ->with('error', 'No dies are eligible for transfer back to Production.');
         }
 
         $count = 0;
@@ -737,7 +737,7 @@ class DieController extends Controller
         }
 
         return redirect()->back()
-            ->with('success', "{$count} die berhasil ditransfer kembali ke Production. Siklus PPM selesai.");
+            ->with('success', "{$count} die successfully transferred back to Production. PPM cycle completed.");
     }
 
     /**
@@ -795,7 +795,7 @@ class DieController extends Controller
         }
 
         return redirect()->back()
-            ->with('success', "{$count} die berhasil dilanjutkan proses PPM-nya.");
+            ->with('success', "{$count} die PPM process resumed successfully.");
     }
 
     /**
@@ -858,7 +858,7 @@ class DieController extends Controller
         }
 
         return redirect()->back()
-            ->with('success', "{$count} die berhasil di-record PPM-nya.");
+            ->with('success', "{$count} die PPM recorded successfully.");
     }
 
     /**
@@ -899,6 +899,6 @@ class DieController extends Controller
         dd($count);
 
         return redirect()->back()
-            ->with('success', "{$count} die berhasil di-set Last LOT Date.");
+            ->with('success', "{$count} die Last LOT Date set successfully.");
     }
 }

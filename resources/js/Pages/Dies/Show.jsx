@@ -277,7 +277,7 @@ export default function DieShow({ auth, die }) {
                                         title: 'Confirm Jadwal PPM?',
                                         text: `Konfirmasi jadwal PPM untuk die ${die.part_number}?`,
                                         icon: 'question',
-                                        confirmText: '✅ Ya, Confirm',
+                                        confirmText: '✅ Yes, Confirm',
                                         confirmColor: '#0891b2',
                                     });
                                     if (ok) router.post(route('dies.approve-schedule', { die: die.encrypted_id }));
@@ -329,9 +329,9 @@ export default function DieShow({ auth, die }) {
                                 onClick={async () => {
                                     const ok = await confirmAction({
                                         title: 'Butuh Additional Repair?',
-                                        text: `Tandai die ${die.part_number} membutuhkan additional repair. PPM akan dilanjutkan setelah repair selesai.`,
+                                        text: `Mark die ${die.part_number} as needing additional repair. PPM will resume after repair is completed.`,
                                         icon: 'warning',
-                                        confirmText: '🔧 Ya, Butuh Repair',
+                                        confirmText: '🔧 Yes, Needs Repair',
                                         confirmColor: '#d97706',
                                     });
                                     if (ok) router.post(route('dies.additional-repair', { die: die.encrypted_id }));
@@ -346,10 +346,10 @@ export default function DieShow({ auth, die }) {
                             <button
                                 onClick={async () => {
                                     const ok = await confirmAction({
-                                        title: 'Lanjutkan Proses PPM?',
+                                        title: 'Resume Process PPM?',
                                         text: `Lanjutkan proses PPM untuk die ${die.part_number} setelah additional repair selesai.`,
                                         icon: 'question',
-                                        confirmText: '▶️ Ya, Lanjutkan',
+                                        confirmText: '▶️ Yes, Resume',
                                         confirmColor: '#2563eb',
                                     });
                                     if (ok) router.post(route('dies.resume-ppm', { die: die.encrypted_id }));
@@ -364,7 +364,7 @@ export default function DieShow({ auth, die }) {
                             <button
                                 onClick={async () => {
                                     const ok = await confirmAction({
-                                        title: 'Transfer Kembali ke Production?',
+                                        title: 'Transfer Back ke Production?',
                                         text: `Transfer die ${die.part_number} kembali ke Production. Siklus PPM akan selesai dan stroke counter di-reset.`,
                                         icon: 'question',
                                         confirmText: '🏭 Ya, Transfer Kembali',
@@ -1700,7 +1700,7 @@ export default function DieShow({ auth, die }) {
                                         value={cancelScheduleForm.data.reason}
                                         onChange={(e) => cancelScheduleForm.setData('reason', e.target.value)}
                                         rows="3"
-                                        placeholder="Jelaskan alasan pembatalan jadwal PPM..."
+                                        placeholder="Explain the reason pembatalan jadwal PPM..."
                                         className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
                                         required
                                     />
@@ -1779,7 +1779,7 @@ export default function DieShow({ auth, die }) {
                                         value={rescheduleForm.data.reason}
                                         onChange={(e) => rescheduleForm.setData('reason', e.target.value)}
                                         rows="3"
-                                        placeholder="Jelaskan alasan perubahan jadwal..."
+                                        placeholder="Explain the reason perubahan jadwal..."
                                         className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
                                         required
                                     />
