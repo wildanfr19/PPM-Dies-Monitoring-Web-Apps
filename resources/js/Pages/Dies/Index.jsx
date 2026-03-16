@@ -724,7 +724,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                 <option value="green">🟢 Green (OK)</option>
                                 <option value="orange">🟠 Orange (Warning)</option>
                                 <option value="red">🔴 Red (Critical)</option>
-                                <option value="ppm">🔧 Sedang PPM</option>
+                                <option value="ppm">🔧 PPM Process</option>
                             </select>
                         </div>
                         <div className="flex gap-2">

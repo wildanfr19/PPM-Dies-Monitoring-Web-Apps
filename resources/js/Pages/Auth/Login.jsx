@@ -52,7 +52,7 @@ export default function Login({ status, canResetPassword }) {
 
             <form onSubmit={submit}>
                 <div>
-                    <InputLabel htmlFor="nik" value="NIK / ID Karyawan" className="text-white" />
+                    <InputLabel htmlFor="nik" value="NIK / Employee ID" className="text-white" />
 
                     <TextInput
                         id="nik"
