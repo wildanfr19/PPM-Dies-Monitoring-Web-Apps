@@ -2,7 +2,7 @@
 
 namespace App\Imports;
 
-use App\Models\Die;
+use App\Models\DieModel;
 use App\Models\Customer;
 use App\Models\MachineModel;
 use Carbon\Carbon;
@@ -44,7 +44,7 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
         if (!$model) {
             $this->skippedRows[] = [
                 'row' => $row,
-                'reason' => "Machine model '{$row['model']}' not found.  Please create it first.",
+                'reason' => "Machine model '{$row['model']}' not found. Please create it first.",
             ];
             return null;
         }
@@ -53,18 +53,17 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
         $existingDie = DieModel::where('part_number', $row['part_number'])->first();
 
         if ($existingDie) {
-            // Update existing die (accumulation_stroke NOT imported — computed from production logs)
             $existingDie->update([
                 'part_name' => $row['part_name'] ?? $existingDie->part_name,
                 'machine_model_id' => $model->id,
                 'customer_id' => $customer->id,
-                'qty_die' => (int) ($row['total_die'] ?? $existingDie->qty_die),
+                'qty_die' => (int) ($row['qty_dies'] ?? $row['total_die'] ?? $existingDie->qty_die),
                 'line' => $row['line'] ?? $existingDie->line,
+                'model' => $row['model'] ?? $existingDie->model,
+                'lot_size' => (int) ($row['lot_size'] ?? $existingDie->lot_size),
                 'last_stroke' => (int) ($row['last_stroke'] ?? $existingDie->last_stroke),
-                'control_stroke' => ! empty($row['control_stroke']) ? (int) $row['control_stroke'] : null,
-                'last_ppm_date' => $this->parseDate($row['last_ppm_date'] ?? null),
-                'location' => $row['location'] ??  $existingDie->location,
-                'notes' => $row['notes'] ??  $existingDie->notes,
+                'ppm_standard' => (int) ($row['ppm_standard'] ?? $existingDie->ppm_standard),
+                'last_ppm_date' => $this->parseDate($row['last_ppm_dies'] ?? $row['last_ppm_date'] ?? null),
             ]);
             $this->updatedCount++;
             return null;
@@ -72,20 +71,19 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
 
         $this->importedCount++;
 
-        // accumulation_stroke starts at 0 — computed from production logs only
         return new DieModel([
             'part_number' => $row['part_number'],
             'part_name' => $row['part_name'] ?? 'Unknown',
             'machine_model_id' => $model->id,
             'customer_id' => $customer->id,
-            'qty_die' => (int) ($row['total_die'] ?? 1),
+            'qty_die' => (int) ($row['qty_dies'] ?? $row['total_die'] ?? 1),
             'line' => $row['line'] ?? null,
+            'model' => $row['model'] ?? null,
+            'lot_size' => (int) ($row['lot_size'] ?? 600),
             'accumulation_stroke' => 0,
             'last_stroke' => (int) ($row['last_stroke'] ?? 0),
-            'control_stroke' => ! empty($row['control_stroke']) ? (int) $row['control_stroke'] : null,
-            'last_ppm_date' => $this->parseDate($row['last_ppm_date'] ?? null),
-            'location' => $row['location'] ?? null,
-            'notes' => $row['notes'] ?? null,
+            'ppm_standard' => (int) ($row['ppm_standard'] ?? 6000),
+            'last_ppm_date' => $this->parseDate($row['last_ppm_dies'] ?? $row['last_ppm_date'] ?? null),
             'status' => 'active',
         ]);
     }
@@ -96,6 +94,7 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
             'part_number' => 'required|string',
             'model' => 'required|string',
             'customer' => 'required|string',
+            'line' => 'required|string',
         ];
     }
 

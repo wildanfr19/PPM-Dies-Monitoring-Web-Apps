@@ -11,8 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             TonnageStandardSeeder::class,
             CustomerSeeder::class,
-            SampleDataSeeder::class,
-            ScheduleDataSeeder::class,
+            GoLiveSeeder::class,
         ]);
     }
 }
