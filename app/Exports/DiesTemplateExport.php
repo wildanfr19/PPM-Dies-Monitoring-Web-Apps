@@ -25,28 +25,26 @@ class DiesTemplateExport implements FromArray, WithHeadings, WithStyles, WithCol
             'No',
             'Part Number',
             'Part Name',
+            'Qty Dies',
+            'Line',
             'Model',
             'Customer',
-            'Total Die',
-            'Line',
-            'Accumulation Stroke',
+            'Lot Size',
+            'Last PPM Dies',
             'Last Stroke',
-            'Control Stroke',
-            'Last PPM Date',
-            'Location',
-            'Notes',
+            'PPM Standard',
         ];
     }
 
     public function array(): array
     {
         return [
-            [1, '71142-I6000', 'REINF-FR PILLAR OTR LWR,RH', 'KS', 'HMMI', 4, '800T', 0, 0, '', '', 'Rack A-01', ''],
-            [2, '65122-I6000', 'PNL CTR FLOOR SIDE,RH', 'KS', 'HMMI', 4, '800T', 0, 0, '', '', 'Rack A-02', ''],
-            [3, '60415-TSEY-X000-H1', 'STIFF R, BHD SIDE MBR', '2SJ', 'UPIN', 3, '250T', 0, 0, 10000, '', 'Rack B-01', 'Progressive die'],
-            [4, '5240B908/909', 'BRACE DASH SIDE RH', '4L45W', 'ATS', 3, '800T', 0, 0, '', '', '', ''],
-            [5, '', '', '', '', '', '', '', '', '', '', '', ''],
-            [6, '', '', '', '', '', '', '', '', '', '', '', ''],
+            [1, '5211A428', 'BAR, FR END UPR, SIDE RH', 4, '800T', '20QX', 'ATS', 600, '10-Mar-26', 0, 6000],
+            [2, '71142-I6000', 'REINF-FR PILLAR OTR LWR,RH', 4, '1200T', 'KS', 'HMMI', 600, '03-Nov-25', 3458, 5000],
+            [3, '63323-T86-K000-50', 'ADPT R,RR COMBI', 7, '250T', '2JX (T86A)', 'G-TIM', 600, '06-Nov-25', 2816, 7000],
+            [4, '71372/82-I6000 (Blank)', 'REINF RR DR CHKR MTG LH/RH', 1, 'Progressive', 'KS', 'HMMI', 600, '03-Nov-25', 1498, 10000],
+            [5, '', '', '', '', '', '', '', '', '', ''],
+            [6, '', '', '', '', '', '', '', '', '', ''],
         ];
     }
 
@@ -54,35 +52,33 @@ class DiesTemplateExport implements FromArray, WithHeadings, WithStyles, WithCol
     {
         return [
             'A' => 5,   // No
-            'B' => 25,  // Part Number
-            'C' => 35,  // Part Name
-            'D' => 10,  // Model
-            'E' => 10,  // Customer
-            'F' => 10,  // Total Die
-            'G' => 8,   // Line
-            'H' => 18,  // Accumulation Stroke
-            'I' => 12,  // Last Stroke
-            'J' => 14,  // Control Stroke
-            'K' => 14,  // Last PPM Date
-            'L' => 12,  // Location
-            'M' => 20,  // Notes
+            'B' => 30,  // Part Number
+            'C' => 38,  // Part Name
+            'D' => 10,  // Qty Dies
+            'E' => 12,  // Line
+            'F' => 18,  // Model
+            'G' => 12,  // Customer
+            'H' => 10,  // Lot Size
+            'I' => 14,  // Last PPM Dies
+            'J' => 12,  // Last Stroke
+            'K' => 14,  // PPM Standard
         ];
     }
 
     public function styles(Worksheet $sheet): array
     {
-        $sheet->getStyle('A1:M1')->applyFromArray([
+        $sheet->getStyle('A1:K1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
             ],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '1565C0'], // Dark blue
+                'startColor' => ['rgb' => '2E5A2E'], // Dark green to match the image
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment:: VERTICAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
             ],
             'borders' => [
                 'allBorders' => [
@@ -91,10 +87,10 @@ class DiesTemplateExport implements FromArray, WithHeadings, WithStyles, WithCol
             ],
         ]);
 
-        $sheet->getStyle('A2:M7')->applyFromArray([
+        $sheet->getStyle('A2:K7')->applyFromArray([
             'borders' => [
                 'allBorders' => [
-                    'borderStyle' => Border:: BORDER_THIN,
+                    'borderStyle' => Border::BORDER_THIN,
                 ],
             ],
         ]);
