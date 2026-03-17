@@ -447,6 +447,10 @@ export default function DieShow({ auth, die }) {
                                     <dt className="text-gray-500 dark:text-gray-400">Last PPM</dt>
                                     <dd className="font-medium text-gray-900 dark: text-gray-100">{die.last_ppm_date || '-'}</dd>
                                 </div>
+                                <div className="flex justify-between">
+                                    <dt className="text-gray-500 dark:text-gray-400">Last Stroke</dt>
+                                    <dd className="font-medium text-gray-900 dark:text-gray-100">{die.last_stroke ? die.last_stroke.toLocaleString() : '-'}</dd>
+                                </div>
                             </dl>
                         </div>
 

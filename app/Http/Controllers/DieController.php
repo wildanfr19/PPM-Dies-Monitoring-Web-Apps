@@ -209,6 +209,7 @@ class DieController extends Controller
                 'line' => $die->line,
                 'process_type' => $die->process_type,
                 'accumulation_stroke' => $die->accumulation_stroke,
+                'last_stroke' => $die->last_stroke,
                 'standard_stroke' => $die->standard_stroke,
                 'remaining_strokes' => $die->remaining_strokes,
                 'stroke_percentage' => $die->stroke_percentage,

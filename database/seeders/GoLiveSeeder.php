@@ -112,7 +112,7 @@ class GoLiveSeeder extends Seeder
                 'lot_size' => $row['lot_size'],
                 'ppm_standard' => $row['ppm_standard'],
                 'last_stroke' => $row['last_stroke'],
-                'accumulation_stroke' => $row['last_stroke'],
+                'accumulation_stroke' => 0,
                 'last_ppm_date' => !empty($row['last_ppm_date']) ? Carbon::parse($row['last_ppm_date']) : null,
                 'status' => 'active',
             ];
