@@ -112,6 +112,7 @@ class GoLiveSeeder extends Seeder
                 'lot_size' => $row['lot_size'],
                 'ppm_standard' => $row['ppm_standard'],
                 'last_stroke' => $row['last_stroke'],
+                'accumulation_stroke' => 0,
                 'last_ppm_date' => !empty($row['last_ppm_date']) ? Carbon::parse($row['last_ppm_date']) : null,
                 'status' => 'active',
             ];
@@ -121,7 +122,6 @@ class GoLiveSeeder extends Seeder
                 $updated++;
             } else {
                 $data['part_number'] = $row['part_number'];
-                $data['accumulation_stroke'] = 0;
                 $data['ppm_count'] = 0;
                 $data['stroke_at_last_ppm'] = 0;
                 DieModel::create($data);
