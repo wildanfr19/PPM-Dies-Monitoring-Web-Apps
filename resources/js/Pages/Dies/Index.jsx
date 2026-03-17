@@ -137,6 +137,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
 
     // Batch selection helpers
     const diesData = dies?.data || [];
+    console.log(diesData) // Debug: check the structure of dies data
     const pagination = dies || {};
 
     const isAllSelected = diesData.length > 0 && diesData.every(d => selectedDies.includes(d.id));
@@ -816,6 +817,9 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Last PPM
                                     </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                        Last Stroke
+                                    </th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Actions
                                     </th>
@@ -959,6 +963,9 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                 {die.last_ppm_date || '-'}
                                             </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                {die.last_stroke != null ? die.last_stroke.toLocaleString() : '-'}
+                                            </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <Link
@@ -1071,6 +1078,9 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                         Last PPM Dies
                                     </th>
                                     <th className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider">
+                                        Last Stroke
+                                    </th>
+                                    <th className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider">
                                         PPM Standard
                                     </th>
                                     <th className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider">
@@ -1129,6 +1139,11 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                         <td className="px-3 py-2 text-center">
                                             <span className="text-sm text-gray-700 dark:text-gray-300">
                                                 {die.last_ppm_date || '-'}
+                                            </span>
+                                        </td>
+                                          <td className="px-3 py-2 text-center">
+                                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                                                {die.last_stroke != null ? die.last_stroke.toLocaleString() : '-'}
                                             </span>
                                         </td>
                                         <td className="px-3 py-2 text-center">
