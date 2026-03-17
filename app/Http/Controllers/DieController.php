@@ -59,6 +59,7 @@ class DieController extends Controller
                 'ppm_alert_status' => $die->ppm_alert_status,
                 'ppm_alert_status_label' => $die->ppm_alert_status_label,
                 'last_ppm_date' => $die->last_ppm_date?->format('d-M-Y'),
+                'last_stroke' => $die->last_stroke,
                 // PPM Conditions Info
                 'ppm_trigger_condition' => $die->ppm_trigger_condition,
                 'ppm_conditions_info' => $die->ppm_conditions_info,
