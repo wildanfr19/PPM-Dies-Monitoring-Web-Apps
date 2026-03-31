@@ -12,6 +12,8 @@ export default function DieCreate({ auth, customers, machineModels }) {
         line: '',
         process_type: '',
         control_stroke: '',
+        last_ppm_date: '',
+        last_stroke: '',
         location: '',
         notes: '',
     });
@@ -183,7 +185,7 @@ export default function DieCreate({ auth, customers, machineModels }) {
                                 </div>
                             </div>
 
-                            {/* Control Stroke */}
+                            {/* Control Stroke & Last Stroke */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -198,6 +200,40 @@ export default function DieCreate({ auth, customers, machineModels }) {
                                     />
                                     <p className="text-xs text-gray-500 mt-1">
                                         Leave empty to use tonnage standard stroke
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Last Stroke
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={data.last_stroke}
+                                        onChange={(e) => setData('last_stroke', e.target.value)}
+                                        placeholder="e.g., 0"
+                                        min="0"
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Stroke count at last PPM check
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Last PPM Date */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Last PPM Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={data.last_ppm_date}
+                                        onChange={(e) => setData('last_ppm_date', e.target.value)}
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Date of latest PPM inspection (optional)
                                     </p>
                                 </div>
                                 <div></div>

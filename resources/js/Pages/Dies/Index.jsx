@@ -984,6 +984,19 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                             <span className="hidden sm:inline">Edit</span>
                                                         </Link>
                                                     )}
+                                                    {canEditDies && (
+                                                        <button
+                                                            onClick={() => confirmAction(
+                                                                'Delete Die',
+                                                                `Are you sure you want to delete "${die.part_number}"?`,
+                                                                () => router.delete(route('dies.destroy', { die: die.encrypted_id }))
+                                                            )}
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                                                        >
+                                                            <i className="fas fa-trash-alt"></i>
+                                                            <span className="hidden sm:inline">Delete</span>
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -1174,6 +1187,19 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                     >
                                                         <i className="fas fa-edit text-xs"></i>
                                                     </Link>
+                                                )}
+                                                {canEditDies && (
+                                                    <button
+                                                        onClick={() => confirmAction(
+                                                            'Delete Die',
+                                                            `Are you sure you want to delete "${die.part_number}"?`,
+                                                            () => router.delete(route('dies.destroy', { die: die.encrypted_id }))
+                                                        )}
+                                                        className="p-1.5 text-red-600 hover:bg-red-50 rounded transition dark:hover:bg-red-900/30"
+                                                        title="Delete"
+                                                    >
+                                                        <i className="fas fa-trash-alt text-xs"></i>
+                                                    </button>
                                                 )}
                                             </div>
                                         </td>

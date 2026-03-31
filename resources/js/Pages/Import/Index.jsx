@@ -2,11 +2,13 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
-export default function ImportIndex({ auth }) {
+export default function ImportIndex({ auth, importLogs = [] }) {
     const { flash } = usePage().props;
     const [activeTab, setActiveTab] = useState('production');
     const [showResultModal, setShowResultModal] = useState(false);
     const [resultTab, setResultTab] = useState('success'); // 'success' or 'failed'
+    const [selectedLog, setSelectedLog] = useState(null);
+    const [showLogDetailModal, setShowLogDetailModal] = useState(false);
 
     // Auto-open modal when importResult is available
     useEffect(() => {
@@ -158,6 +160,16 @@ export default function ImportIndex({ auth }) {
                                     }`}
                                 >
                                     <i className="fas fa-calendar-alt"></i> PPM Schedule Template
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('history')}
+                                    className={`px-6 py-4 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
+                                        activeTab === 'history'
+                                            ? 'border-blue-500 text-blue-600'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    }`}
+                                >
+                                    <i className="fas fa-history"></i> Import History
                                 </button>
                             </nav>
                         </div>
@@ -438,7 +450,7 @@ export default function ImportIndex({ auth }) {
                                             <span>ℹ️</span> Import Behavior:
                                         </h4>
                                         <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 list-disc list-inside space-y-1">
-                                            <li>If Part Number exists → Die will be <strong>updated</strong></li>
+                                            <li>If Part Number already exists → Row will be <strong>skipped</strong> (duplicate)</li>
                                             <li>If Part Number is new → Die will be <strong>created</strong></li>
                                             <li>Model code must match existing:  <code className="bg-blue-100 px-1 rounded">KS</code>, <code className="bg-blue-100 px-1 rounded">4L45W</code>, <code className="bg-blue-100 px-1 rounded">2SJ</code>, <code className="bg-blue-100 px-1 rounded">2SK</code>, etc.</li>
                                             <li>Customer will be auto-created if not exists</li>
@@ -774,6 +786,96 @@ export default function ImportIndex({ auth }) {
                                     </div>
                                 </div>
                             )}
+
+                            {/* ==================== Import History ==================== */}
+                            {activeTab === 'history' && (
+                                <div className="space-y-6">
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                            <i className="fas fa-history text-blue-500"></i> Import History
+                                        </h3>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            View recent import results and failed uploads
+                                        </p>
+                                    </div>
+
+                                    {importLogs.length > 0 ? (
+                                        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-gray-50 dark:bg-gray-700">
+                                                    <tr>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Date</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Type</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">File</th>
+                                                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Status</th>
+                                                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Imported</th>
+                                                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Skipped</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">User</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Details</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                                    {importLogs.map((log) => (
+                                                        <tr key={log.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${log.status === 'failed' ? 'bg-red-50/50 dark:bg-red-900/10' : ''}`}>
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400 whitespace-nowrap">{log.created_at}</td>
+                                                            <td className="px-3 py-2">
+                                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                                                    log.type === 'production' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                                                                    log.type === 'dies' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
+                                                                    'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+                                                                }`}>
+                                                                    {log.type === 'production' ? 'Production Log' : log.type === 'dies' ? 'Dies Master' : 'PPM Schedule'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300 max-w-[200px] truncate" title={log.file_name}>{log.file_name}</td>
+                                                            <td className="px-3 py-2 text-center">
+                                                                {log.status === 'success' ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300">
+                                                                        <i className="fas fa-check-circle"></i> Success
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300">
+                                                                        <i className="fas fa-times-circle"></i> Failed
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-2 text-center font-medium text-green-600 dark:text-green-400">{log.status === 'success' ? log.imported_count : '-'}</td>
+                                                            <td className="px-3 py-2 text-center font-medium text-red-600 dark:text-red-400">{log.status === 'success' ? log.skipped_count : '-'}</td>
+                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{log.user}</td>
+                                                            <td className="px-3 py-2">
+                                                                {log.status === 'failed' && log.error_message && (
+                                                                    <span className="text-xs text-red-600 dark:text-red-400 block max-w-[250px] truncate" title={log.error_message}>
+                                                                        {log.error_message}
+                                                                    </span>
+                                                                )}
+                                                                {log.status === 'success' && log.skipped_rows && log.skipped_rows.length > 0 && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setSelectedLog(log);
+                                                                            setShowLogDetailModal(true);
+                                                                        }}
+                                                                        className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                                                                    >
+                                                                        View {log.skipped_rows.length} skipped rows
+                                                                    </button>
+                                                                )}
+                                                                {log.status === 'success' && (!log.skipped_rows || log.skipped_rows.length === 0) && (
+                                                                    <span className="text-xs text-gray-400">All imported</span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 text-gray-400">
+                                            <i className="fas fa-inbox text-4xl mb-3 block"></i>
+                                            <p>No import history yet</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1043,6 +1145,70 @@ export default function ImportIndex({ auth }) {
                         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
                             <button
                                 onClick={() => setShowResultModal(false)}
+                                className="px-5 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm font-medium"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Log Detail Modal (Skipped Rows from History) */}
+            {showLogDetailModal && selectedLog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+                        onClick={() => setShowLogDetailModal(false)}
+                    ></div>
+                    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col z-10">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                    Skipped Rows Detail
+                                </h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    {selectedLog.file_name} — {selectedLog.created_at}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowLogDetailModal(false)}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition p-1"
+                            >
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div className="px-6 py-4 overflow-auto flex-1">
+                            <div className="overflow-x-auto rounded-lg border border-red-200 dark:border-red-800">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-red-50 dark:bg-red-900/40">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Row</th>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Part Number</th>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Part Name</th>
+                                            <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Reason</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-red-100 dark:divide-red-800">
+                                        {selectedLog.skipped_rows.map((row, idx) => (
+                                            <tr key={idx} className="hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.row_number}</td>
+                                                <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{row.part_number || '-'}</td>
+                                                <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.part_name || '-'}</td>
+                                                <td className="px-3 py-2">
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">
+                                                        {row.reason}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                            <button
+                                onClick={() => setShowLogDetailModal(false)}
                                 className="px-5 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm font-medium"
                             >
                                 Close

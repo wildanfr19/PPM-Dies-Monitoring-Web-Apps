@@ -27,8 +27,8 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
     {
         $this->currentRow++;
 
-        // Skip if no part number
-        if (empty($row['part_number'])) {
+        // Skip if essential fields are empty (template rows with only "No" filled)
+        if (empty($row['part_number']) || empty($row['model']) || empty($row['customer'])) {
             return null;
         }
 
@@ -96,10 +96,10 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
     public function rules(): array
     {
         return [
-            'part_number' => 'required|string',
-            'model' => 'required|string',
-            'customer' => 'required|string',
-            'line' => 'required|string',
+            'part_number' => 'nullable|string',
+            'model' => 'nullable|string',
+            'customer' => 'nullable|string',
+            'line' => 'nullable|string',
         ];
     }
 
