@@ -12,6 +12,8 @@ export default function DieEdit({ auth, die, customers, machineModels }) {
         line: die.line || '',
         process_type: die.process_type || '',
         control_stroke: die.control_stroke || '',
+        last_ppm_date: die.last_ppm_date ? new Date(die.last_ppm_date).toISOString().split('T')[0] : '',
+        last_stroke: die.last_stroke ?? '',
         location: die.location || '',
         notes: die. notes || '',
         is_4lot_check: die.is_4lot_check || false,
@@ -173,7 +175,7 @@ export default function DieEdit({ auth, die, customers, machineModels }) {
                                 </div>
                             </div>
 
-                            {/* Control Stroke */}
+                            {/* Control Stroke & Last Stroke */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -186,6 +188,40 @@ export default function DieEdit({ auth, die, customers, machineModels }) {
                                         placeholder="Leave empty to use standard"
                                         className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
                                     />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Last Stroke
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={data.last_stroke}
+                                        onChange={(e) => setData('last_stroke', e.target.value)}
+                                        placeholder="e.g., 0"
+                                        min="0"
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Stroke count at last PPM check
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Last PPM Date */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Last PPM Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={data.last_ppm_date}
+                                        onChange={(e) => setData('last_ppm_date', e.target.value)}
+                                        className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Date of latest PPM inspection
+                                    </p>
                                 </div>
                                 <div></div>
                             </div>
