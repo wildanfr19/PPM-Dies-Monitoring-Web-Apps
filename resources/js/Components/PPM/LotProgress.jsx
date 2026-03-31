@@ -6,11 +6,11 @@ export default function LotProgress({
     showDetails = true
 }) {
     /**
-     * Get color class berdasarkan zone lot
-     * Zone ditentukan dari posisi lot:
-     * - Lot terakhir: Red zone
-     * - Lot sebelum terakhir: Orange zone
-     * - Lot lainnya: Green zone
+     * Get color class based on lot zone
+     * Zone is determined by lot position:
+     * - Last lot: Red zone
+     * - Second to last lot: Orange zone
+     * - Other lots: Green zone
      */
     const getColorClass = (lot) => {
         const zone = lot.zone || lot.status;
@@ -30,7 +30,7 @@ export default function LotProgress({
                     ? 'bg-red-100 text-red-600 border border-red-300'
                     : 'bg-red-500 text-white';
             default:
-                // Fallback untuk backward compatibility
+                // Fallback for backward compatibility
                 if (lot.status === 'green') return 'bg-green-500 text-white';
                 if (lot.status === 'orange') return 'bg-orange-500 text-white';
                 if (lot.status === 'red') return 'bg-red-500 text-white';

@@ -170,10 +170,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/special-repair/{specialRepair}', [SpecialDiesRepairController::class, 'destroy'])->name('special-repair.destroy');
 
         // Workflow actions
-        Route::post('/special-repair/{specialRepair}/approve', [SpecialDiesRepairController::class, 'approve'])->name('special-repair.approve');
         Route::post('/special-repair/{specialRepair}/start', [SpecialDiesRepairController::class, 'startRepair'])->name('special-repair.start');
         Route::post('/special-repair/{specialRepair}/complete', [SpecialDiesRepairController::class, 'completeRepair'])->name('special-repair.complete');
-        Route::post('/special-repair/{specialRepair}/reject', [SpecialDiesRepairController::class, 'reject'])->name('special-repair.reject');
 
         // Special scenarios
         Route::post('/special-repair/urgent-delivery', [SpecialDiesRepairController::class, 'handleUrgentDelivery'])->name('special-repair.urgent-delivery');

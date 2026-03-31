@@ -19,20 +19,35 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
     use Importable, SkipsErrors;
 
     protected int $importedCount = 0;
-    protected int $updatedCount = 0;
     protected array $skippedRows = [];
+    protected array $successRows = [];
+    protected int $currentRow = 1;
 
     public function model(array $row)
     {
+        $this->currentRow++;
+
         // Skip if no part number
         if (empty($row['part_number'])) {
+            return null;
+        }
+
+        // Check if die already exists (duplicate)
+        $existingDie = DieModel::where('part_number', $row['part_number'])->first();
+        if ($existingDie) {
+            $this->skippedRows[] = [
+                'row_number' => $this->currentRow,
+                'part_number' => $row['part_number'],
+                'part_name' => $row['part_name'] ?? '-',
+                'model' => $row['model'] ?? '-',
+                'reason' => "Part number '{$row['part_number']}' already exists in Dies Master.",
+            ];
             return null;
         }
 
         // Find or get customer
         $customer = Customer::where('code', $row['customer'])->first();
         if (!$customer) {
-            // Create customer if not exists
             $customer = Customer::create([
                 'code' => $row['customer'],
                 'name' => $row['customer'],
@@ -43,33 +58,23 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
         $model = MachineModel::where('code', $row['model'])->first();
         if (!$model) {
             $this->skippedRows[] = [
-                'row' => $row,
+                'row_number' => $this->currentRow,
+                'part_number' => $row['part_number'] ?? '-',
+                'part_name' => $row['part_name'] ?? '-',
+                'model' => $row['model'] ?? '-',
                 'reason' => "Machine model '{$row['model']}' not found. Please create it first.",
             ];
             return null;
         }
 
-        // Check if die already exists
-        $existingDie = DieModel::where('part_number', $row['part_number'])->first();
-
-        if ($existingDie) {
-            $existingDie->update([
-                'part_name' => $row['part_name'] ?? $existingDie->part_name,
-                'machine_model_id' => $model->id,
-                'customer_id' => $customer->id,
-                'qty_die' => (int) ($row['qty_dies'] ?? $row['total_die'] ?? $existingDie->qty_die),
-                'line' => $row['line'] ?? $existingDie->line,
-                'model' => $row['model'] ?? $existingDie->model,
-                'lot_size' => (int) ($row['lot_size'] ?? $existingDie->lot_size),
-                'last_stroke' => (int) ($row['last_stroke'] ?? $existingDie->last_stroke),
-                'ppm_standard' => (int) ($row['ppm_standard'] ?? $existingDie->ppm_standard),
-                'last_ppm_date' => $this->parseDate($row['last_ppm_dies'] ?? $row['last_ppm_date'] ?? null),
-            ]);
-            $this->updatedCount++;
-            return null;
-        }
-
         $this->importedCount++;
+        $this->successRows[] = [
+            'row_number' => $this->currentRow,
+            'part_number' => $row['part_number'],
+            'part_name' => $row['part_name'] ?? 'Unknown',
+            'model' => $row['model'] ?? '-',
+            'customer' => $row['customer'] ?? '-',
+        ];
 
         return new DieModel([
             'part_number' => $row['part_number'],
@@ -119,13 +124,13 @@ class DiesImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
         return $this->importedCount;
     }
 
-    public function getUpdatedCount(): int
-    {
-        return $this->updatedCount;
-    }
-
     public function getSkippedRows(): array
     {
         return $this->skippedRows;
+    }
+
+    public function getSuccessRows(): array
+    {
+        return $this->successRows;
     }
 }

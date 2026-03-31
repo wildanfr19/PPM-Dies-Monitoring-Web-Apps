@@ -50,7 +50,7 @@ export default function ImportIndex({ auth }) {
         });
     };
 
-    // Sample data untuk preview
+    // Sample data for preview
     const sampleDies = [
         {
             no: 1,
@@ -113,12 +113,12 @@ export default function ImportIndex({ auth }) {
                             <div className="flex items-center gap-3">
                                 <i className="fas fa-info-circle text-xl"></i>
                                 <span>
-                                    Import selesai — <strong className="text-green-700">{flash.importResult.imported} berhasil</strong>,{' '}
-                                    {(flash.importResult.accumulated_count || 0) > 0 && (
-                                        <><strong className="text-yellow-600">{flash.importResult.accumulated_count} diakumulasi</strong>,{' '}</>
+                                    Import completed — <strong className="text-green-700">{flash.importResult.imported} successful</strong>,{' '}
+                                    {flash.importResult.type === 'production' && (flash.importResult.accumulated_count || 0) > 0 && (
+                                        <><strong className="text-yellow-600">{flash.importResult.accumulated_count} accumulated</strong>,{' '}</>
                                     )}
-                                    <strong className="text-red-600">{flash.importResult.skipped_count} dilewati</strong>.
-                                    Klik untuk melihat detail.
+                                    <strong className="text-red-600">{flash.importResult.skipped_count} skipped</strong>.
+                                    Click to view details.
                                 </span>
                             </div>
                             <i className="fas fa-chevron-right"></i>
@@ -798,10 +798,10 @@ export default function ImportIndex({ auth }) {
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                        Hasil Import Production Log
+                                        {flash.importResult.type === 'dies' ? 'Import Dies Master Result' : 'Import Production Log Result'}
                                     </h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Ringkasan hasil import data
+                                        Import result summary
                                     </p>
                                 </div>
                             </div>
@@ -814,10 +814,10 @@ export default function ImportIndex({ auth }) {
                         </div>
 
                         {/* Summary Cards */}
-                        <div className="px-6 py-4 grid grid-cols-4 gap-4 border-b border-gray-200 dark:border-gray-700">
+                        <div className={`px-6 py-4 grid gap-4 border-b border-gray-200 dark:border-gray-700 ${flash.importResult.type === 'production' ? 'grid-cols-4' : 'grid-cols-3'}`}>
                             <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
                                 <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-                                    {flash.importResult.imported + (flash.importResult.accumulated_count || 0) + flash.importResult.skipped_count}
+                                    {flash.importResult.imported + (flash.importResult.type === 'production' ? (flash.importResult.accumulated_count || 0) : 0) + flash.importResult.skipped_count}
                                 </div>
                                 <div className="text-xs text-blue-600 dark:text-blue-300 mt-1">Total Data</div>
                             </div>
@@ -825,19 +825,21 @@ export default function ImportIndex({ auth }) {
                                 <div className="text-2xl font-bold text-green-700 dark:text-green-400">
                                     {flash.importResult.imported}
                                 </div>
-                                <div className="text-xs text-green-600 dark:text-green-300 mt-1">Berhasil Import</div>
+                                <div className="text-xs text-green-600 dark:text-green-300 mt-1">Successfully Imported</div>
                             </div>
-                            <div className="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg p-3 text-center">
-                                <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
-                                    {flash.importResult.accumulated_count || 0}
+                            {flash.importResult.type === 'production' && (
+                                <div className="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg p-3 text-center">
+                                    <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+                                        {flash.importResult.accumulated_count || 0}
+                                    </div>
+                                    <div className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">Accumulated</div>
                                 </div>
-                                <div className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">Diakumulasi</div>
-                            </div>
+                            )}
                             <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 text-center">
                                 <div className="text-2xl font-bold text-red-700 dark:text-red-400">
                                     {flash.importResult.skipped_count}
                                 </div>
-                                <div className="text-xs text-red-600 dark:text-red-300 mt-1">Dilewati / Gagal</div>
+                                <div className="text-xs text-red-600 dark:text-red-300 mt-1">Skipped / Failed</div>
                             </div>
                         </div>
 
@@ -852,19 +854,21 @@ export default function ImportIndex({ auth }) {
                                 }`}
                             >
                                 <i className="fas fa-check-circle"></i>
-                                Berhasil ({flash.importResult.imported})
+                                Successful ({flash.importResult.imported})
                             </button>
-                            <button
-                                onClick={() => setResultTab('accumulated')}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
-                                    resultTab === 'accumulated'
-                                        ? 'bg-yellow-600 text-white shadow-sm'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                }`}
-                            >
-                                <i className="fas fa-layer-group"></i>
-                                Diakumulasi ({flash.importResult.accumulated_count || 0})
-                            </button>
+                            {flash.importResult.type === 'production' && (
+                                <button
+                                    onClick={() => setResultTab('accumulated')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+                                        resultTab === 'accumulated'
+                                            ? 'bg-yellow-600 text-white shadow-sm'
+                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    }`}
+                                >
+                                    <i className="fas fa-layer-group"></i>
+                                    Accumulated ({flash.importResult.accumulated_count || 0})
+                                </button>
+                            )}
                             <button
                                 onClick={() => setResultTab('failed')}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
@@ -874,7 +878,7 @@ export default function ImportIndex({ auth }) {
                                 }`}
                             >
                                 <i className="fas fa-times-circle"></i>
-                                Dilewati ({flash.importResult.skipped_count})
+                                Skipped ({flash.importResult.skipped_count})
                             </button>
                         </div>
 
@@ -890,10 +894,19 @@ export default function ImportIndex({ auth }) {
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Row</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Part Number</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Part Name</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Date</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Shift</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Line</th>
-                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Output</th>
+                                                        {flash.importResult.type === 'dies' ? (
+                                                            <>
+                                                                <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Model</th>
+                                                                <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Customer</th>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Date</th>
+                                                                <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Shift</th>
+                                                                <th className="px-3 py-2 text-left text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Line</th>
+                                                                <th className="px-3 py-2 text-right text-xs font-semibold text-green-700 dark:text-green-300 uppercase">Output</th>
+                                                            </>
+                                                        )}
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-green-100 dark:divide-green-800">
@@ -902,10 +915,19 @@ export default function ImportIndex({ auth }) {
                                                             <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.row_number}</td>
                                                             <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{row.part_number}</td>
                                                             <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.part_name}</td>
-                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.date}</td>
-                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.shift}</td>
-                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.line}</td>
-                                                            <td className="px-3 py-2 text-right font-semibold text-green-700 dark:text-green-400">{row.output?.toLocaleString()}</td>
+                                                            {flash.importResult.type === 'dies' ? (
+                                                                <>
+                                                                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.model}</td>
+                                                                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.customer}</td>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.date}</td>
+                                                                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.shift}</td>
+                                                                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.line}</td>
+                                                                    <td className="px-3 py-2 text-right font-semibold text-green-700 dark:text-green-400">{row.output?.toLocaleString()}</td>
+                                                                </>
+                                                            )}
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -914,7 +936,7 @@ export default function ImportIndex({ auth }) {
                                     ) : (
                                         <div className="text-center py-12 text-gray-400">
                                             <i className="fas fa-inbox text-4xl mb-3 block"></i>
-                                            <p>Tidak ada data yang berhasil diimport</p>
+                                            <p>No data was successfully imported</p>
                                         </div>
                                     )}
                                 </>
@@ -932,9 +954,9 @@ export default function ImportIndex({ auth }) {
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Part Name</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Date</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Shift</th>
-                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Qty Lama</th>
-                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Ditambah</th>
-                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Qty Baru</th>
+                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Old Qty</th>
+                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">Added</th>
+                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">New Qty</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-yellow-100 dark:divide-yellow-800">
@@ -956,7 +978,7 @@ export default function ImportIndex({ auth }) {
                                     ) : (
                                         <div className="text-center py-12 text-gray-400">
                                             <i className="fas fa-layer-group text-4xl mb-3 block"></i>
-                                            <p>Tidak ada data yang diakumulasi</p>
+                                            <p>No data was accumulated</p>
                                         </div>
                                     )}
                                 </>
@@ -972,9 +994,15 @@ export default function ImportIndex({ auth }) {
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Row</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Part Number</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Part Name</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Date</th>
-                                                        <th className="px-3 py-2 text-right text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Output</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Alasan</th>
+                                                        {flash.importResult.type === 'dies' ? (
+                                                            <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Model</th>
+                                                        ) : (
+                                                            <>
+                                                                <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Date</th>
+                                                                <th className="px-3 py-2 text-right text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Output</th>
+                                                            </>
+                                                        )}
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-red-700 dark:text-red-300 uppercase">Reason</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-red-100 dark:divide-red-800">
@@ -983,8 +1011,14 @@ export default function ImportIndex({ auth }) {
                                                             <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.row_number}</td>
                                                             <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{row.part_number || '-'}</td>
                                                             <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.part_name || '-'}</td>
-                                                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.date || '-'}</td>
-                                                            <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{row.output ?? '-'}</td>
+                                                            {flash.importResult.type === 'dies' ? (
+                                                                <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.model || '-'}</td>
+                                                            ) : (
+                                                                <>
+                                                                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.date || '-'}</td>
+                                                                    <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{row.output ?? '-'}</td>
+                                                                </>
+                                                            )}
                                                             <td className="px-3 py-2">
                                                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">
                                                                     {row.reason}
@@ -998,7 +1032,7 @@ export default function ImportIndex({ auth }) {
                                     ) : (
                                         <div className="text-center py-12 text-gray-400">
                                             <i className="fas fa-check-double text-4xl mb-3 block text-green-400"></i>
-                                            <p>Semua data berhasil diimport! Tidak ada yang dilewati.</p>
+                                            <p>All data imported successfully! Nothing was skipped.</p>
                                         </div>
                                     )}
                                 </>
@@ -1011,7 +1045,7 @@ export default function ImportIndex({ auth }) {
                                 onClick={() => setShowResultModal(false)}
                                 className="px-5 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm font-medium"
                             >
-                                Tutup
+                                Close
                             </button>
                         </div>
                     </div>

@@ -8,20 +8,12 @@ export default function Show({ auth, repair }) {
     const [findings, setFindings] = useState('');
     const [recommendations, setRecommendations] = useState('');
     const [actualHours, setActualHours] = useState('');
-    const [rejectNotes, setRejectNotes] = useState('');
     const [pic, setPic] = useState('');
     const [showCompleteForm, setShowCompleteForm] = useState(false);
-    const [showRejectForm, setShowRejectForm] = useState(false);
 
     const isAdmin = auth.user.role === 'admin';
     const isMtnDies = auth.user.role === 'mtn_dies';
     const canManage = isAdmin || isMtnDies;
-
-    const handleApprove = () => {
-        if (confirm('Approve this special repair request?')) {
-            router.post(route('special-repair.approve', repair.encrypted_id));
-        }
-    };
 
     const handleStartRepair = () => {
         router.post(route('special-repair.start', repair.encrypted_id), { pic });
@@ -38,23 +30,15 @@ export default function Show({ auth, repair }) {
         });
     };
 
-    const handleReject = (e) => {
-        e.preventDefault();
-        router.post(route('special-repair.reject', repair.encrypted_id), { notes: rejectNotes });
-    };
-
     const statusColors = {
-        pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
         approved: 'bg-blue-100 text-blue-800 border-blue-300',
         in_progress: 'bg-orange-100 text-orange-800 border-orange-300',
         completed: 'bg-green-100 text-green-800 border-green-300',
-        rejected: 'bg-red-100 text-red-800 border-red-300',
         cancelled: 'bg-gray-100 text-gray-800 border-gray-300',
     };
 
     const timelineSteps = [
-        { label: 'Requested', date: repair.requested_at, done: true },
-        { label: 'Approved', date: repair.approved_at, done: !!repair.approved_at },
+        { label: 'Created', date: repair.requested_at, done: true },
         { label: 'Started', date: repair.started_at, done: !!repair.started_at },
         { label: 'Completed', date: repair.completed_at, done: !!repair.completed_at },
     ];
@@ -132,7 +116,6 @@ export default function Show({ auth, repair }) {
                         </h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span className="text-gray-500">Requested By</span><span>{repair.requested_by}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Approved By</span><span>{repair.approved_by || '-'}</span></div>
                             <div className="flex justify-between"><span className="text-gray-500">PIC</span><span>{repair.pic || '-'}</span></div>
                             <div className="flex justify-between"><span className="text-gray-500">PPM Interrupted</span><span>{repair.is_ppm_interrupted ? 'Yes' : 'No'}</span></div>
                             <div className="flex justify-between"><span className="text-gray-500">Previous Status</span><span>{repair.previous_ppm_status || '-'}</span></div>
@@ -188,17 +171,6 @@ export default function Show({ auth, repair }) {
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 space-y-4">
                         <h4 className="font-semibold text-gray-700 mb-3">Actions</h4>
 
-                        {repair.status === 'pending' && (
-                            <div className="flex gap-3">
-                                <button onClick={handleApprove} className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
-                                    <i className="fas fa-check mr-1"></i> Approve
-                                </button>
-                                <button onClick={() => setShowRejectForm(!showRejectForm)} className="px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700">
-                                    <i className="fas fa-times mr-1"></i> Reject
-                                </button>
-                            </div>
-                        )}
-
                         {repair.status === 'approved' && (
                             <div className="flex items-end gap-3">
                                 <div>
@@ -246,19 +218,6 @@ export default function Show({ auth, repair }) {
                                 </div>
                                 <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
                                     Confirm Complete
-                                </button>
-                            </form>
-                        )}
-
-                        {/* Reject Form */}
-                        {showRejectForm && repair.status === 'pending' && (
-                            <form onSubmit={handleReject} className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Rejection Reason *</label>
-                                    <textarea value={rejectNotes} onChange={e => setRejectNotes(e.target.value)} rows={3} required className="w-full rounded-md border-gray-300 text-sm" />
-                                </div>
-                                <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700">
-                                    Confirm Reject
                                 </button>
                             </form>
                         )}

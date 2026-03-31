@@ -251,7 +251,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                         : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
                                 }`}
                             >
-                                📋 Semua
+                                📋 All
                             </button>
                             {needsScheduleCount > 0 && (
                                 <button
@@ -266,7 +266,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
                                     </span>
-                                    🔔 Perlu Dijadwalkan ({needsScheduleCount})
+                                    🔔 Needs Scheduling ({needsScheduleCount})
                                 </button>
                             )}
                             {alreadyScheduledCount > 0 && (
@@ -278,14 +278,14 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                             : 'bg-green-50 text-green-800 border border-green-300 hover:bg-green-100'
                                     }`}
                                 >
-                                    ✅ Sudah Dijadwalkan ({alreadyScheduledCount})
+                                    ✅  Already Scheduled ({alreadyScheduledCount})
                                 </button>
                             )}
                             {scheduleFilter !== 'all' && (
                                 <span className="text-xs text-gray-500 ml-2">
                                     {scheduleFilter === 'needs_schedule'
-                                        ? 'Menampilkan dies yang sudah ada LOT date tapi belum dijadwalkan PPM'
-                                        : 'Menampilkan dies yang sudah memiliki jadwal PPM'
+                                        ? 'Showing dies that have a LOT date but have not been scheduled for PPM yet'
+                                        : 'Showing dies that already have a PPM schedule'
                                     }
                                 </span>
                             )}
@@ -632,7 +632,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                         {isMtnDies && (
                             <div className="flex items-center gap-2 ml-4 border-l pl-4">
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-400 text-white">📅 SCHEDULE</span>
-                                <span>Perlu Dijadwalkan PPM</span>
+                                <span>Needs PPM Scheduling</span>
                             </div>
                         )}
                     </div>
@@ -675,7 +675,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                 <div className={`text-2xl font-bold ${needsScheduleCount > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
                                     {needsScheduleCount}
                                 </div>
-                                <div className="text-sm text-amber-700">🔔 Perlu Dijadwalkan</div>
+                                <div className="text-sm text-amber-700">🔔 Needs Scheduling</div>
                             </div>
                             <div
                                 onClick={() => setScheduleFilter(scheduleFilter === 'already_scheduled' ? 'all' : 'already_scheduled')}
@@ -686,7 +686,7 @@ export default function ScheduleIndex({ auth, year, scheduleData, customers, ton
                                 <div className={`text-2xl font-bold ${alreadyScheduledCount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                                     {alreadyScheduledCount}
                                 </div>
-                                <div className="text-sm text-green-700">✅ Sudah Dijadwalkan</div>
+                                <div className="text-sm text-green-700">✅ Already Scheduled</div>
                             </div>
                         </>
                     )}

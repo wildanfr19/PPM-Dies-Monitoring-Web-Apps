@@ -206,12 +206,12 @@ export default function Dashboard({ auth, stats, diesByTonnage, criticalDies, up
                                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Part Number</th>
                                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
                                         <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Tanggal alert RED muncul">RED Alert</th>
-                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Target hari ke-1: Transfer die ke MTN">Transfer (H+1)</th>
-                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Target hari ke-3: Mulai proses PPM">PPM Start (H+3)</th>
-                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Target hari ke-4: PPM selesai">PPM Finish (H+4)</th>
-                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Hari</th>
-                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Apakah proses PPM selesai tepat waktu (maks 5 hari kerja)?">Tepat Waktu?</th>
+                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Date RED alert appeared">RED Alert</th>
+                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Target day 1: Transfer die to MTN">Transfer (H+1)</th>
+                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Target day 3: Start PPM process">PPM Start (H+3)</th>
+                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Target day 4: PPM completed">PPM Finish (H+4)</th>
+                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Days</th>
+                                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase" title="Was PPM completed on time (max 5 working days)?">On Time?</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">

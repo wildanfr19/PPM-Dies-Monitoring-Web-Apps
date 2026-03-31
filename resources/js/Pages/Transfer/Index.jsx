@@ -188,9 +188,10 @@ export default function TransferIndex({ auth, toMtn, toProduction, atMtn, recent
                                                 die.ppm_alert_status === 'red_alerted' ? 'bg-red-100 text-red-700' :
                                                 die.ppm_alert_status === 'ppm_completed' ? 'bg-green-100 text-green-700' :
                                                 die.ppm_alert_status === 'ppm_in_progress' ? 'bg-blue-100 text-blue-700' :
+                                                !die.ppm_alert_status ? 'bg-green-100 text-green-700' :
                                                 'bg-yellow-100 text-yellow-700'
                                             }`}>
-                                                {die.ppm_alert_status_label || die.ppm_alert_status}
+                                                {die.ppm_alert_status_label || die.ppm_alert_status || 'Returned to Production'}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-500">

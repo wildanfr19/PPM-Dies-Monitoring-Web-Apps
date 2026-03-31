@@ -16,11 +16,9 @@ class SpecialDiesRepair extends Model
     const TYPE_SEVERE_DAMAGE = 'severe_damage';
     const TYPE_SPECIAL_REQUEST = 'special_request';
 
-    const STATUS_PENDING = 'pending';
     const STATUS_APPROVED = 'approved';
     const STATUS_IN_PROGRESS = 'in_progress';
     const STATUS_COMPLETED = 'completed';
-    const STATUS_REJECTED = 'rejected';
     const STATUS_CANCELLED = 'cancelled';
 
     const PRIORITY_HIGH = 'high';
@@ -96,11 +94,9 @@ class SpecialDiesRepair extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            self::STATUS_PENDING => 'Pending Approval',
-            self::STATUS_APPROVED => 'Approved',
+            self::STATUS_APPROVED => 'Open',
             self::STATUS_IN_PROGRESS => 'In Progress',
             self::STATUS_COMPLETED => 'Completed',
-            self::STATUS_REJECTED => 'Rejected',
             self::STATUS_CANCELLED => 'Cancelled',
             default => ucfirst(str_replace('_', ' ', $this->status)),
         };
@@ -109,11 +105,9 @@ class SpecialDiesRepair extends Model
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            self::STATUS_PENDING => 'yellow',
             self::STATUS_APPROVED => 'blue',
             self::STATUS_IN_PROGRESS => 'orange',
             self::STATUS_COMPLETED => 'green',
-            self::STATUS_REJECTED => 'red',
             self::STATUS_CANCELLED => 'gray',
             default => 'gray',
         };
@@ -141,7 +135,7 @@ class SpecialDiesRepair extends Model
 
     public function scopeActive($query)
     {
-        return $query->whereNotIn('status', [self::STATUS_COMPLETED, self::STATUS_REJECTED, self::STATUS_CANCELLED]);
+        return $query->whereNotIn('status', [self::STATUS_COMPLETED, self::STATUS_CANCELLED]);
     }
 
     public function scopeCompleted($query)

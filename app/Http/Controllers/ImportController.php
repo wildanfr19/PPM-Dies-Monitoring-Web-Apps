@@ -112,7 +112,7 @@ class ImportController extends Controller
     public function importDies(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes: xlsx,xls,csv|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
         ]);
 
         try {
@@ -120,19 +120,21 @@ class ImportController extends Controller
             Excel::import($import, $request->file('file'));
 
             $imported = $import->getImportedCount();
-            $updated = $import->getUpdatedCount();
             $skipped = $import->getSkippedRows();
+            $successRows = $import->getSuccessRows();
 
-            $message = "Successfully imported {$imported} new dies, updated {$updated} existing dies.";
+            $message = "Successfully imported {$imported} new dies.";
 
             if (count($skipped) > 0) {
                 $message .= " " . count($skipped) . " rows were skipped.";
             }
 
-            return redirect()->route('import.index')->with('success', $message)->with('importDetails', [
+            return redirect()->route('import.index')->with('success', $message)->with('importResult', [
+                'type' => 'dies',
                 'imported' => $imported,
-                'updated' => $updated,
-                'skipped' => $skipped,
+                'skipped_count' => count($skipped),
+                'success_rows' => $successRows,
+                'skipped_rows' => $skipped,
             ]);
 
         } catch (\Exception $e) {

@@ -18,9 +18,9 @@ export default function Test({ auth, message }) {
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
                         <div className="p-6 text-gray-900 dark:text-gray-100">
                             <h3 className="text-2xl font-bold mb-4">
-                                🎉 Laravel + Inertia + React Berhasil!
+                                🎉 Laravel + Inertia + React Success!
                             </h3>
-                            <p className="mb-4">Message dari Controller: <strong>{message}</strong></p>
+                            <p className="mb-4">Message from Controller: <strong>{message}</strong></p>
 
                             {/* Test Lot Visualization */}
                             <div className="mt-6">

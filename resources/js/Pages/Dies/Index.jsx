@@ -180,7 +180,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
         if (transferable.length > 0 && ['admin', 'production'].includes(auth.user.role)) {
             actions.push({
                 key: 'transfer',
-                label: `🚚 Transfer ke MTN (${transferable.length})`,
+                label: `🚚 Transfer to MTN (${transferable.length})`,
                 color: 'bg-orange-600 hover:bg-orange-700',
                 count: transferable.length,
             });
@@ -328,11 +328,11 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
         }
 
         const actionLabels = {
-            'transfer': 'Transfer ke MTN Dies',
+            'transfer': 'Transfer to MTN Dies',
             'start-ppm': 'Start PPM Processing',
             'additional-repair': 'Additional Repair',
             'resume-ppm': 'Resume PPM',
-            'transfer-back': 'Transfer Back ke Production',
+            'transfer-back': 'Transfer Back to Production',
         };
 
         const routeMap = {
@@ -345,9 +345,9 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
 
         const ok = await confirmAction({
             title: `Batch ${actionLabels[actionKey]}?`,
-            text: `Akan melakukan "${actionLabels[actionKey]}" untuk ${eligibleIds.length} die sekaligus. Lanjutkan?`,
+            text: `This will perform "${actionLabels[actionKey]}" for ${eligibleIds.length} die at once. Continue?`,
             icon: 'question',
-            confirmText: `Ya, Proses ${eligibleIds.length} Die`,
+            confirmText: `Yes, Process ${eligibleIds.length} Die`,
             confirmColor: '#2563eb',
         });
 
@@ -854,7 +854,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                 <div className="text-sm text-gray-900 dark:text-gray-100 max-w-[200px] truncate" title={die.part_name}>
                                                     {die.part_name}
                                                     {die.is_4lot_check && (
-                                                        <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300" title="4-Lot Check: Reset setelah PPM">
+                                                        <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300" title="4-Lot Check: Reset after PPM">
                                                             4LC
                                                         </span>
                                                     )}
@@ -1114,7 +1114,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                             <span className="text-sm text-gray-900 dark:text-gray-100" title={die.part_name}>
                                                 {die.part_name}
                                                 {die.is_4lot_check && (
-                                                    <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300" title="4-Lot Check: Reset setelah PPM">
+                                                    <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300" title="4-Lot Check: Reset after PPM">
                                                         4LC
                                                     </span>
                                                 )}
@@ -1215,7 +1215,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                             <span className="bg-blue-600 text-white text-sm font-bold px-2.5 py-1 rounded-full">
                                 {selectedDies.length}
                             </span>
-                            <span className="text-sm text-gray-300">die dipilih</span>
+                            <span className="text-sm text-gray-300">die selected</span>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                             {batchActions.map((action) => (
@@ -1262,7 +1262,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                             <div className="p-6 space-y-4">
                                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
                                     <p className="text-sm text-purple-800 dark:text-purple-300 font-medium">
-                                        {eligibleDies.length} die akan di-set Last LOT Date:
+                                        {eligibleDies.length} die will have Last LOT Date set:
                                     </p>
                                     <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
                                         {eligibleDies.map(d => (
@@ -1300,7 +1300,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                     onClick={() => setShowBatchLotDateModal(false)}
                                     className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500"
                                 >
-                                    Batal
+                                    Cancel
                                 </button>
                                 <button
                                     onClick={handleBatchSetLastLotDate}
@@ -1310,7 +1310,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                     {batchProcessing ? (
                                         <><i className="fas fa-spinner fa-spin mr-1"></i> Processing...</>
                                     ) : (
-                                        `Set LOT Date untuk ${eligibleDies.length} Die`
+                                        `Set LOT Date for ${eligibleDies.length} Die`
                                     )}
                                 </button>
                             </div>
@@ -1369,8 +1369,8 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                     INSPECTION CHECK PPM DIES — Batch Record
                                 </h3>
                                 <div className="flex items-center gap-4 mt-1 text-sm text-indigo-100">
-                                    <span><i className="fas fa-layer-group mr-1"></i> {recordableDies.length} die dipilih</span>
-                                    <span><i className="fas fa-check-circle mr-1"></i> {completedDiesCount}/{recordableDies.length} selesai</span>
+                                    <span><i className="fas fa-layer-group mr-1"></i> {recordableDies.length} die selected</span>
+                                    <span><i className="fas fa-check-circle mr-1"></i> {completedDiesCount}/{recordableDies.length} completed</span>
                                     <div className="flex-1 max-w-[200px] bg-white/20 rounded-full h-2 overflow-hidden ml-2">
                                         <div
                                             className="h-2 bg-green-400 rounded-full transition-all"
@@ -1391,25 +1391,25 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                     <i className="fas fa-exclamation-triangle text-amber-500 mt-0.5"></i>
                                     <div className="text-sm">
                                         <p className="font-semibold text-amber-800 dark:text-amber-200">
-                                            {skippedDies.length} die tidak bisa di-Record PPM saat ini:
+                                            {skippedDies.length} die cannot be Record PPM at this time:
                                         </p>
                                         <ul className="mt-1 space-y-0.5 text-amber-700 dark:text-amber-300">
                                             {skippedDies.map(die => {
                                                 const statusLabels = {
-                                                    'red_alerted': 'Perlu "Transfer ke MTN" dan "Start PPM" dulu',
-                                                    'orange_alerted': 'Masih Orange Alert — belum mencapai RED',
-                                                    'lot_date_set': 'Last LOT Date sudah di-set, belum dijadwalkan PPM',
-                                                    'ppm_scheduled': 'Sudah dijadwalkan, menunggu approval jadwal',
-                                                    'schedule_approved': 'Jadwal disetujui, menunggu RED alert',
-                                                    'ppm_completed': 'PPM sudah selesai',
+                                                    'red_alerted': 'Needs "Transfer to MTN" and "Start PPM" first',
+                                                    'orange_alerted': 'Still Orange Alert — has not reached RED',
+                                                    'lot_date_set': 'Last LOT Date set, not yet scheduled for PPM',
+                                                    'ppm_scheduled': 'Already scheduled, waiting for schedule approval',
+                                                    'schedule_approved': 'Schedule approved, waiting for RED alert',
+                                                    'ppm_completed': 'PPM already completed',
                                                 };
                                                 const reason = die.ppm_alert_status
                                                     ? (statusLabels[die.ppm_alert_status] || `Status: ${die.ppm_alert_status}`)
                                                     : (die.ppm_status === 'red'
-                                                        ? 'Status RED tapi belum masuk workflow — perlu Transfer ke MTN'
+                                                        ? 'RED status but not yet in workflow — needs Transfer to MTN'
                                                         : die.ppm_status === 'orange'
-                                                            ? 'Masih Orange — belum mencapai batas RED'
-                                                            : 'Belum masuk proses PPM workflow');
+                                                            ? 'Still Orange — has not reached RED threshold'
+                                                            : 'Not yet in PPM workflow');
                                                 return (
                                                     <li key={die.id} className="flex items-center gap-2">
                                                         <span className="font-mono text-xs bg-amber-100 dark:bg-amber-800 px-1.5 py-0.5 rounded">
@@ -1423,7 +1423,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                         {skippedDies.some(d => d.ppm_alert_status === 'red_alerted' || (!d.ppm_alert_status && d.ppm_status === 'red')) && (
                                             <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 italic">
                                                 <i className="fas fa-info-circle mr-1"></i>
-                                                Untuk die berstatus RED: lakukan "Transfer ke MTN" → "Start PPM" terlebih dahulu agar bisa Record PPM.
+                                                For RED status dies: perform "Transfer to MTN" → "Start PPM" first before Record PPM.
                                             </p>
                                         )}
                                     </div>
@@ -1491,7 +1491,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                                 </span>
                                                             ) : (
                                                                 <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-600 dark:bg-red-900 dark:text-red-300">
-                                                                    Belum pilih process
+                                                                    No process selected
                                                                 </span>
                                                             )}
                                                             {hasProcess && !isDone && (
@@ -1634,7 +1634,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                     }`}>
                                         <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">
                                             <i className={`fas ${activeDieData.process_type ? 'fa-check-circle text-indigo-600' : 'fa-exclamation-circle text-red-500'} mr-1`}></i>
-                                            STEP 1: Pilih Process Type untuk "{activeDie.part_number}"
+                                            STEP 1: Select Process Type for "{activeDie.part_number}"
                                         </label>
                                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                                             {PROCESS_TYPES.map((p) => (
@@ -1654,7 +1654,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                         {!activeDieData.process_type && (
                                             <p className="text-xs text-red-600 dark:text-red-400 mt-2">
                                                 <i className="fas fa-arrow-up mr-1"></i>
-                                                Wajib pilih process type di atas sebelum mengisi checklist
+                                                Must select a process type above before filling checklist
                                             </p>
                                         )}
                                     </div>
@@ -1666,7 +1666,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                 <h5 className="font-bold text-sm flex items-center gap-2">
                                                     <i className="fas fa-clipboard-list"></i>
                                                     STEP 2: Checklist — {getProcessTypeLabel(activeDieData.process_type)}
-                                                    <span className="text-indigo-200 font-normal text-xs ml-1">(untuk {activeDie.part_number})</span>
+                                                    <span className="text-indigo-200 font-normal text-xs ml-1">(for {activeDie.part_number})</span>
                                                 </h5>
                                                 <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
                                                     activeFilledCount === activeTotalCount ? 'bg-green-500' : 'bg-indigo-500'
@@ -1752,7 +1752,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                         <div className="bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
                                             <i className="fas fa-hand-pointer text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                Pilih <strong>Process Type</strong> di atas untuk menampilkan checklist inspection
+                                                Select a <strong>Process Type</strong> above to display the inspection checklist
                                             </p>
                                         </div>
                                     )}
@@ -1761,7 +1761,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                     {activeDieData.process_type && (
                                         <div className="space-y-3">
                                             <h5 className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                                                <i className="fas fa-pen mr-1"></i> STEP 3: Catatan Tambahan (Opsional)
+                                                <i className="fas fa-pen mr-1"></i> STEP 3: Additional Notes (Optional)
                                             </h5>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
@@ -1770,7 +1770,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                         value={activeDieData.work_performed || ''}
                                                         onChange={(e) => updateDieData(activeDie.id, 'work_performed', e.target.value)}
                                                         rows={2}
-                                                        placeholder="Pekerjaan yang dilakukan..."
+                                                        placeholder="Work performed..."
                                                         className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-xs"
                                                     />
                                                 </div>
@@ -1780,7 +1780,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                         value={activeDieData.parts_replaced || ''}
                                                         onChange={(e) => updateDieData(activeDie.id, 'parts_replaced', e.target.value)}
                                                         rows={2}
-                                                        placeholder="Parts yang diganti..."
+                                                        placeholder="Parts replaced..."
                                                         className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-xs"
                                                     />
                                                 </div>
@@ -1802,18 +1802,18 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                             disabled={activeIndex === 0}
                                             className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
                                         >
-                                            <i className="fas fa-arrow-left"></i> Die Sebelumnya
+                                            <i className="fas fa-arrow-left"></i> Previous Die
                                         </button>
                                         {activeIndex < recordableDies.length - 1 ? (
                                             <button
                                                 onClick={goNext}
                                                 className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition flex items-center gap-1"
                                             >
-                                                Die Berikutnya <i className="fas fa-arrow-right"></i>
+                                                Next Die <i className="fas fa-arrow-right"></i>
                                             </button>
                                         ) : (
                                             <span className="text-xs text-gray-400">
-                                                <i className="fas fa-flag-checkered mr-1"></i> Die terakhir
+                                                <i className="fas fa-flag-checkered mr-1"></i> Last die
                                             </span>
                                         )}
                                     </div>
@@ -1821,11 +1821,11 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                         <div className="text-xs text-gray-500 dark:text-gray-400">
                                             {allChecklistsFilled ? (
                                                 <span className="text-green-600 dark:text-green-400 font-medium">
-                                                    <i className="fas fa-check-circle mr-1"></i>{completedDiesCount}/{recordableDies.length} checklist lengkap
+                                                    <i className="fas fa-check-circle mr-1"></i>{completedDiesCount}/{recordableDies.length} checklist complete
                                                 </span>
                                             ) : (
                                                 <span className="text-amber-600 dark:text-amber-400">
-                                                    <i className="fas fa-exclamation-triangle mr-1"></i>{completedDiesCount}/{recordableDies.length} lengkap
+                                                    <i className="fas fa-exclamation-triangle mr-1"></i>{completedDiesCount}/{recordableDies.length} complete
                                                 </span>
                                             )}
                                         </div>
@@ -1833,7 +1833,7 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                             onClick={() => setShowBatchRecordModal(false)}
                                             className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition dark:bg-gray-700 dark:text-gray-300 text-xs"
                                         >
-                                            Batal
+                                            Cancel
                                         </button>
                                         <button
                                             onClick={handleBatchRecordPpm}
