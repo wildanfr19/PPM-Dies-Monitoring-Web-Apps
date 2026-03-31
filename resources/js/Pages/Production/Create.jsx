@@ -230,7 +230,7 @@ export default function ProductionCreate({ auth, dies }) {
                                 </div>
                                 <div className="col-span-3">
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Total Stroke Saat Ini <span className="text-xs text-gray-400">(Akumulasi Stroke)</span>
+                                        Current Total Stroke <span className="text-xs text-gray-400">(Accumulated Stroke)</span>
                                     </label>
                                     <div className="w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 bg-gray-50 px-3 py-2 text-sm font-semibold text-blue-700 dark:text-blue-400">
                                         {selectedDie ? selectedDie.accumulation_stroke?.toLocaleString() + ' strokes' : '-'}
@@ -336,13 +336,13 @@ export default function ProductionCreate({ auth, dies }) {
                                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                                     <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
                                         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                                            📊 Panduan Status PPM Alert
+                                            📊 PPM Alert Status Guide
                                         </h4>
                                     </div>
                                     <div className="p-4 space-y-3">
                                         {/* Status preview */}
                                         <div className="flex items-center gap-3 text-sm">
-                                            <span className="text-gray-500">Status saat ini:</span>
+                                            <span className="text-gray-500">Current status:</span>
                                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
                                                 alertGuidance.currentStatus === 'red' ? 'bg-red-100 text-red-700' :
                                                 alertGuidance.currentStatus === 'orange' ? 'bg-orange-100 text-orange-700' :
@@ -369,12 +369,12 @@ export default function ProductionCreate({ auth, dies }) {
                                         {/* Accumulation preview */}
                                         <div className="text-xs text-gray-500 space-y-1">
                                             <div className="flex justify-between">
-                                                <span>Akumulasi stroke saat ini:</span>
+                                                <span>Current accumulated stroke:</span>
                                                 <span className="font-mono font-medium text-gray-700 dark:text-gray-300">{alertGuidance.currentAccum.toLocaleString()}</span>
                                             </div>
                                             {data.output_qty && (
                                                 <div className="flex justify-between">
-                                                    <span>Akumulasi stroke setelah input:</span>
+                                                    <span>Accumulated stroke after input:</span>
                                                     <span className={`font-mono font-medium ${
                                                         alertGuidance.predictedStatus === 'red' ? 'text-red-600' :
                                                         alertGuidance.predictedStatus === 'orange' ? 'text-orange-600' :
@@ -399,9 +399,9 @@ export default function ProductionCreate({ auth, dies }) {
                                                     ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200'
                                                     : 'bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600'
                                             }`}>
-                                                <div className="text-xs text-gray-500 mb-1">🟠 Menuju ORANGE</div>
+                                                <div className="text-xs text-gray-500 mb-1">🟠 Towards ORANGE</div>
                                                 {alertGuidance.currentStatus === 'orange' || alertGuidance.currentStatus === 'red' ? (
-                                                    <div className="text-xs font-medium text-orange-600">Sudah melewati</div>
+                                                    <div className="text-xs font-medium text-orange-600">Already passed</div>
                                                 ) : (
                                                     <>
                                                         <div className="text-sm font-bold text-orange-600">
@@ -409,7 +409,7 @@ export default function ProductionCreate({ auth, dies }) {
                                                         </div>
                                                         {alertGuidance.remainingToOrange > 0 && data.output_qty && (
                                                             <div className="text-xs text-gray-400 mt-0.5">
-                                                                Sisa {alertGuidance.remainingToOrange.toLocaleString()} stroke lagi
+                                                                {alertGuidance.remainingToOrange.toLocaleString()} strokes remaining
                                                             </div>
                                                         )}
                                                     </>
@@ -420,9 +420,9 @@ export default function ProductionCreate({ auth, dies }) {
                                                     ? 'bg-red-50 dark:bg-red-900/20 border border-red-200'
                                                     : 'bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600'
                                             }`}>
-                                                <div className="text-xs text-gray-500 mb-1">🔴 Menuju RED</div>
+                                                <div className="text-xs text-gray-500 mb-1">🔴 Towards RED</div>
                                                 {alertGuidance.currentStatus === 'red' ? (
-                                                    <div className="text-xs font-medium text-red-600">Sudah melewati</div>
+                                                    <div className="text-xs font-medium text-red-600">Already passed</div>
                                                 ) : (
                                                     <>
                                                         <div className="text-sm font-bold text-red-600">
@@ -430,7 +430,7 @@ export default function ProductionCreate({ auth, dies }) {
                                                         </div>
                                                         {alertGuidance.remainingToRed > 0 && data.output_qty && (
                                                             <div className="text-xs text-gray-400 mt-0.5">
-                                                                Sisa {alertGuidance.remainingToRed.toLocaleString()} stroke lagi
+                                                                {alertGuidance.remainingToRed.toLocaleString()} strokes remaining
                                                             </div>
                                                         )}
                                                     </>
@@ -450,10 +450,10 @@ export default function ProductionCreate({ auth, dies }) {
                                                 <span className="mt-0.5">⚠️</span>
                                                 <span>
                                                     {alertGuidance.predictedStatus === 'red'
-                                                        ? 'Dengan output ini, die akan berubah ke status RED! PPM harus segera dilakukan.'
+                                                        ? 'With this output, the die will change to RED status! PPM must be performed immediately.'
                                                         : alertGuidance.predictedStatus === 'orange'
-                                                        ? 'Dengan output ini, die akan berubah ke status ORANGE. Segera jadwalkan PPM.'
-                                                        : 'Dengan output ini, die akan kembali ke status GREEN.'}
+                                                        ? 'With this output, the die will change to ORANGE status. Schedule PPM soon.'
+                                                        : 'With this output, the die will return to GREEN status.'}
                                                 </span>
                                             </div>
                                         )}

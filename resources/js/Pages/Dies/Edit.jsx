@@ -200,7 +200,7 @@ export default function DieEdit({ auth, die, customers, machineModels }) {
                                     className="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900"
                                 />
                                 <label htmlFor="is_4lot_check" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    4-Lot Check <span className="text-xs text-gray-500">(Reset accumulation setelah PPM/polishing)</span>
+                                    4-Lot Check <span className="text-xs text-gray-500">(Reset accumulation after PPM/polishing)</span>
                                 </label>
                             </div>
 

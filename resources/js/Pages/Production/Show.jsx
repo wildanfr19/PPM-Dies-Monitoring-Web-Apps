@@ -171,7 +171,7 @@ export default function ProductionShow({ auth, log }) {
                                         log.die?.ppm_status === 'red' ? 'text-red-600 dark:text-red-400'
                                             : log.die?.ppm_status === 'orange' ? 'text-orange-600 dark:text-orange-400'
                                             : 'text-blue-600 dark:text-blue-400'
-                                    }`}>Total Akumulasi Stroke</p>
+                                    }`}>Total Accumulated Stroke</p>
                                     <p className={`text-4xl font-bold ${
                                         log.die?.ppm_status === 'red' ? 'text-red-700 dark:text-red-300'
                                             : log.die?.ppm_status === 'orange' ? 'text-orange-700 dark:text-orange-300'

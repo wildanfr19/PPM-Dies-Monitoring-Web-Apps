@@ -254,7 +254,7 @@ export default function DieShow({ auth, die }) {
                                             ? 'bg-green-600 text-white hover:bg-green-700'
                                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                     }`}
-                                    title={!canRecordPpm ? 'Die harus ditransfer ke lokasi MTN Dies terlebih dahulu' : 'Record PPM inspection'}
+                                    title={!canRecordPpm ? 'Die must be transferred to MTN Dies location first' : 'Record PPM inspection'}
                                 >
                                     📝 Record PPM
                                 </button>
@@ -274,8 +274,8 @@ export default function DieShow({ auth, die }) {
                             <button
                                 onClick={async () => {
                                     const ok = await confirmAction({
-                                        title: 'Confirm Jadwal PPM?',
-                                        text: `Konfirmasi jadwal PPM untuk die ${die.part_number}?`,
+                                        title: 'Confirm PPM Schedule?',
+                                        text: `Confirm PPM schedule for die ${die.part_number}?`,
                                         icon: 'question',
                                         confirmText: '✅ Yes, Confirm',
                                         confirmColor: '#0891b2',
@@ -287,7 +287,7 @@ export default function DieShow({ auth, die }) {
                                 ✅ Confirm PPM Schedule
                             </button>
                         )}
-                        {/* PROD: Transfer Dies ke MTN */}
+                        {/* PROD: Transfer Dies to MTN */}
                         {isProd && die.ppm_status === 'red' && !['transferred_to_mtn', 'ppm_in_progress', 'additional_repair', 'ppm_completed'].includes(die.ppm_alert_status) && (
                             <button
                                 onClick={() => setShowTransferModal(true)}
@@ -328,7 +328,7 @@ export default function DieShow({ auth, die }) {
                             <button
                                 onClick={async () => {
                                     const ok = await confirmAction({
-                                        title: 'Butuh Additional Repair?',
+                                        title: 'Needs Additional Repair?',
                                         text: `Mark die ${die.part_number} as needing additional repair. PPM will resume after repair is completed.`,
                                         icon: 'warning',
                                         confirmText: '🔧 Yes, Needs Repair',
@@ -346,8 +346,8 @@ export default function DieShow({ auth, die }) {
                             <button
                                 onClick={async () => {
                                     const ok = await confirmAction({
-                                        title: 'Resume Process PPM?',
-                                        text: `Lanjutkan proses PPM untuk die ${die.part_number} setelah additional repair selesai.`,
+                                        title: 'Resume PPM Process?',
+                                        text: `Continue PPM process for die ${die.part_number} after additional repair is completed.`,
                                         icon: 'question',
                                         confirmText: '▶️ Yes, Resume',
                                         confirmColor: '#2563eb',
@@ -364,10 +364,10 @@ export default function DieShow({ auth, die }) {
                             <button
                                 onClick={async () => {
                                     const ok = await confirmAction({
-                                        title: 'Transfer Back ke Production?',
-                                        text: `Transfer die ${die.part_number} kembali ke Production. Siklus PPM akan selesai dan stroke counter di-reset.`,
+                                        title: 'Transfer Back to Production?',
+                                        text: `Transfer die ${die.part_number} back to Production. The PPM cycle will be completed and the stroke counter will be reset.`,
                                         icon: 'question',
-                                        confirmText: '🏭 Ya, Transfer Kembali',
+                                        confirmText: '🏭 Yes, Transfer Back',
                                         confirmColor: '#16a34a',
                                     });
                                     if (ok) router.post(route('dies.transfer-back', { die: die.encrypted_id }));
@@ -389,19 +389,19 @@ export default function DieShow({ auth, die }) {
                                 <span className="text-2xl">⚠️</span>
                                 <div>
                                     <p className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">
-                                        Record PPM belum bisa dilakukan
+                                        Record PPM cannot be performed yet
                                     </p>
                                     <p className="text-sm text-amber-700 dark:text-amber-300">
-                                        Die harus ditransfer ke lokasi <strong>MTN Dies</strong> oleh bagian <strong>Production</strong> terlebih dahulu.
+                                        Die must be transferred to <strong>MTN Dies</strong> location by <strong>Production</strong> first.
                                     </p>
                                     {!die.ppm_alert_status && (
-                                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">📦 Status: Menunggu proses transfer dari Production</p>
+                                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">📦 Status: Waiting for transfer process from Production</p>
                                     )}
                                     {die.ppm_alert_status === 'red_alerted' && (
-                                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">🔴 Status: Red Alert sudah terkirim — menunggu Production transfer die</p>
+                                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">🔴 Status: Red Alert sent — waiting for Production to transfer die</p>
                                     )}
                                     {die.ppm_alert_status === 'schedule_approved' && (
-                                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">✅ Status: Jadwal PPM sudah di-approve — menunggu Production transfer die</p>
+                                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">✅ Status: PPM schedule approved — waiting for Production to transfer die</p>
                                     )}
                                 </div>
                             </div>
@@ -538,7 +538,7 @@ export default function DieShow({ auth, die }) {
                                                 <span className="font-bold">{die.transfer_to_location}</span>
                                             </p>
                                             <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                                                {die.transferred_by && <>By: {die.transferred_by} | </>}Tanggal: {die.transferred_at}
+                                                {die.transferred_by && <>By: {die.transferred_by} | </>}Date: {die.transferred_at}
                                             </p>
                                         </div>
                                     )}
@@ -550,7 +550,7 @@ export default function DieShow({ auth, die }) {
                                                 ▶️ MTN Dies - Start PPM Processing
                                             </p>
                                             <p className="text-sm font-bold text-blue-900 dark:text-blue-100">
-                                                Mulai: {die.ppm_started_at}
+                                                Started: {die.ppm_started_at}
                                             </p>
                                         </div>
                                     )}
@@ -562,11 +562,11 @@ export default function DieShow({ auth, die }) {
                                                 ✅ MTN Dies - PPM Completed
                                             </p>
                                             <p className="text-sm font-bold text-green-900 dark:text-green-100">
-                                                Selesai: {die.ppm_finished_at}
+                                                Completed: {die.ppm_finished_at}
                                             </p>
                                             {die.ppm_total_days !== null && die.ppm_total_days !== undefined && (
                                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                                    Total: {die.ppm_total_days} hari kerja (sejak RED alert)
+                                                    Total: {die.ppm_total_days} working days (since RED alert)
                                                 </p>
                                             )}
                                         </div>
@@ -666,10 +666,10 @@ export default function DieShow({ auth, die }) {
                                                     <button
                                                         onClick={async () => {
                                                             const ok = await confirmAction({
-                                                                title: 'Mulai Proses?',
-                                                                text: `Mulai proses "${proc.process_label}" untuk die ${die.part_number}?`,
+                                                                title: 'Start Process?',
+                                                                text: `Start process "${proc.process_label}" for die ${die.part_number}?`,
                                                                 icon: 'question',
-                                                                confirmText: '▶️ Ya, Mulai',
+                                                                confirmText: '▶️ Yes, Start',
                                                                 confirmColor: '#2563eb',
                                                             });
                                                             if (ok) router.post(route('dies.process-start', { process: proc.encrypted_id }));
@@ -706,7 +706,7 @@ export default function DieShow({ auth, die }) {
                                             value={mtnRemarkForm.data.mtn_remark}
                                             onChange={(e) => mtnRemarkForm.setData('mtn_remark', e.target.value)}
                                             rows="3"
-                                            placeholder="Catatan dari MTN Dies..."
+                                            placeholder="Notes from MTN Dies..."
                                             className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
                                         />
                                         <button
@@ -735,7 +735,7 @@ export default function DieShow({ auth, die }) {
                                             value={ppicRemarkForm.data.ppic_remark}
                                             onChange={(e) => ppicRemarkForm.setData('ppic_remark', e.target.value)}
                                             rows="3"
-                                            placeholder="Catatan dari PPIC..."
+                                            placeholder="Notes from PPIC..."
                                             className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
                                         />
                                         <button
@@ -773,7 +773,7 @@ export default function DieShow({ auth, die }) {
                                     </p>
                                     {die.is_4lot_check && (
                                         <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-medium">
-                                            🔄 4-Lot Check — Accumulation reset setelah PPM
+                                            🔄 4-Lot Check — Accumulation reset after PPM
                                         </p>
                                     )}
                                 </div>
@@ -1246,7 +1246,7 @@ export default function DieShow({ auth, die }) {
                                                         ? 'bg-green-500 text-white'
                                                         : 'bg-indigo-500 text-white'
                                                 }`}>
-                                                    {data.checklist_results.filter(c => c.result).length} / {data.checklist_results.length} sudah diisi
+                                                    {data.checklist_results.filter(c => c.result).length} / {data.checklist_results.length} filled
                                                 </span>
                                             </div>
                                         </div>
@@ -1328,10 +1328,10 @@ export default function DieShow({ auth, die }) {
                                 {!data.process_type && (
                                     <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-center">
                                         <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                                            ⚠️ Pilih <strong>Process Type</strong> di atas untuk menampilkan checklist inspeksi PPM.
+                                            ⚠️ Select a <strong>Process Type</strong> above to display the PPM inspection checklist.
                                         </p>
                                         <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-                                            Process type menentukan item-item inspeksi yang harus dicek.
+                                            The process type determines which inspection items need to be checked.
                                         </p>
                                     </div>
                                 )}
@@ -1421,13 +1421,13 @@ export default function DieShow({ auth, die }) {
                                         type="submit"
                                         disabled={processing || !data.process_type || (data.checklist_results.length > 0 && data.checklist_results.some(c => !c.result))}
                                         className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title={(data.checklist_results.length > 0 && data.checklist_results.some(c => !c.result)) ? 'Semua checklist item harus diisi terlebih dahulu' : ''}
+                                        title={(data.checklist_results.length > 0 && data.checklist_results.some(c => !c.result)) ? 'All checklist items must be filled in first' : ''}
                                     >
                                         {processing ? 'Saving...' : activeProcess ? `✓ Complete ${activeProcess.process_label}` : '✓ Record PPM'}
                                     </button>
                                     {data.checklist_results.length > 0 && data.checklist_results.some(c => !c.result) && (
                                         <p className="text-xs text-red-500 mt-1">
-                                            ⚠ Lengkapi semua checklist ({data.checklist_results.filter(c => c.result).length}/{data.checklist_results.length}) sebelum submit
+                                            ⚠ Complete all checklist items ({data.checklist_results.filter(c => c.result).length}/{data.checklist_results.length}) before submitting
                                         </p>
                                     )}
                                 </div>
@@ -1616,15 +1616,15 @@ export default function DieShow({ auth, die }) {
 
                             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
                                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                                    <strong>ℹ️ Info:</strong> Die ini memiliki <strong>{die.qty_die}</strong> proses (qty die).
-                                    Pilih proses yang akan di-PPM. Setiap proses akan dilacak secara terpisah.
+                                    <strong>ℹ️ Info:</strong> This die has <strong>{die.qty_die}</strong> processes (qty die).
+                                    Select the processes to perform PPM on. Each process will be tracked separately.
                                 </p>
                             </div>
 
                             <form onSubmit={handleStartPpmWithProcesses} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                        Pilih Process Types untuk PPM:
+                                        Select Process Types for PPM:
                                     </label>
                                     <div className="grid grid-cols-2 gap-2">
                                         {PROCESS_TYPES.map((p) => (
@@ -1690,21 +1690,21 @@ export default function DieShow({ auth, die }) {
 
                             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
                                 <p className="text-sm text-red-800 dark:text-red-200">
-                                    <strong>⚠️ Warning:</strong> Membatalkan jadwal PPM untuk die <strong>{die.part_number}</strong>.
-                                    Status akan dikembalikan dan perlu dijadwalkan ulang.
+                                    <strong>⚠️ Warning:</strong> Cancelling PPM schedule for die <strong>{die.part_number}</strong>.
+                                    Status will be reverted and will need to be rescheduled.
                                 </p>
                             </div>
 
                             <form onSubmit={handleCancelSchedule} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Alasan Cancel *
+                                        Cancel Reason *
                                     </label>
                                     <textarea
                                         value={cancelScheduleForm.data.reason}
                                         onChange={(e) => cancelScheduleForm.setData('reason', e.target.value)}
                                         rows="3"
-                                        placeholder="Explain the reason pembatalan jadwal PPM..."
+                                        placeholder="Explain the reason for cancelling the PPM schedule..."
                                         className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
                                         required
                                     />
@@ -1719,7 +1719,7 @@ export default function DieShow({ auth, die }) {
                                         onClick={() => setShowCancelScheduleModal(false)}
                                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
                                     >
-                                        Batal
+                                        Cancel
                                     </button>
                                     <button
                                         type="submit"
@@ -1754,15 +1754,15 @@ export default function DieShow({ auth, die }) {
 
                             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
                                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                    <strong>ℹ️ Info:</strong> Jadwal PPM saat ini: <strong>{die.ppm_scheduled_date}</strong>.
-                                    Mengubah jadwal akan memerlukan approval ulang dari PPIC.
+                                    <strong>ℹ️ Info:</strong> Current PPM schedule: <strong>{die.ppm_scheduled_date}</strong>.
+                                    Changing the schedule will require re-approval from PPIC.
                                 </p>
                             </div>
 
                             <form onSubmit={handleReschedule} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Tanggal Baru *
+                                        New Date *
                                     </label>
                                     <input
                                         type="date"
@@ -1777,13 +1777,13 @@ export default function DieShow({ auth, die }) {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Alasan Perubahan *
+                                        Change Reason *
                                     </label>
                                     <textarea
                                         value={rescheduleForm.data.reason}
                                         onChange={(e) => rescheduleForm.setData('reason', e.target.value)}
                                         rows="3"
-                                        placeholder="Explain the reason perubahan jadwal..."
+                                        placeholder="Explain the reason for rescheduling..."
                                         className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 text-sm"
                                         required
                                     />
@@ -1798,7 +1798,7 @@ export default function DieShow({ auth, die }) {
                                         onClick={() => setShowRescheduleModal(false)}
                                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
                                     >
-                                        Batal
+                                        Cancel
                                     </button>
                                     <button
                                         type="submit"

@@ -117,16 +117,27 @@ class SpecialDiesRepairController extends Controller
 
         $die = DieModel::findOrFail($validated['die_id']);
 
+        $isPpmInterrupted = in_array($die->ppm_alert_status, ['ppm_scheduled', 'ppm_in_progress']);
+
         $repair = SpecialDiesRepair::create([
             ...$validated,
-            'status' => SpecialDiesRepair::STATUS_PENDING,
+            'status' => SpecialDiesRepair::STATUS_APPROVED,
             'requested_by' => auth()->user()->name,
+            'approved_by' => auth()->user()->name,
             'requested_at' => now(),
-            'is_ppm_interrupted' => in_array($die->ppm_alert_status, ['ppm_scheduled', 'ppm_in_progress']),
+            'approved_at' => now(),
+            'is_ppm_interrupted' => $isPpmInterrupted,
             'previous_ppm_status' => $die->ppm_alert_status,
             'previous_location' => $die->location,
             'created_by' => auth()->id(),
         ]);
+
+        // If PPM was in progress, pause it
+        if ($isPpmInterrupted) {
+            $die->update([
+                'ppm_alert_status' => 'special_repair',
+            ]);
+        }
 
         return redirect()->route('special-repair.index')
             ->with('success', 'Special repair request created successfully.');
@@ -189,32 +200,6 @@ class SpecialDiesRepairController extends Controller
     }
 
     /**
-     * Approve a special repair request
-     */
-    public function approve(Request $request, SpecialDiesRepair $specialRepair)
-    {
-        if ($specialRepair->status !== SpecialDiesRepair::STATUS_PENDING) {
-            return redirect()->back()->with('error', 'Only pending requests can be approved.');
-        }
-
-        $specialRepair->update([
-            'status' => SpecialDiesRepair::STATUS_APPROVED,
-            'approved_by' => auth()->user()->name,
-            'approved_at' => now(),
-        ]);
-
-        // If PPM was in progress, pause it
-        $die = $specialRepair->die;
-        if ($specialRepair->is_ppm_interrupted && $die) {
-            $die->update([
-                'ppm_alert_status' => 'special_repair',
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Special repair approved.');
-    }
-
-    /**
      * Start the repair process
      */
     public function startRepair(Request $request, SpecialDiesRepair $specialRepair)
@@ -274,26 +259,7 @@ class SpecialDiesRepairController extends Controller
         return redirect()->back()->with('success', 'Repair completed successfully.');
     }
 
-    /**
-     * Reject a repair request
-     */
-    public function reject(Request $request, SpecialDiesRepair $specialRepair)
-    {
-        if ($specialRepair->status !== SpecialDiesRepair::STATUS_PENDING) {
-            return redirect()->back()->with('error', 'Only pending requests can be rejected.');
-        }
 
-        $validated = $request->validate([
-            'notes' => 'required|string|max:500',
-        ]);
-
-        $specialRepair->update([
-            'status' => SpecialDiesRepair::STATUS_REJECTED,
-            'notes' => $validated['notes'],
-        ]);
-
-        return redirect()->back()->with('success', 'Repair request rejected.');
-    }
 
     /**
      * Handle urgent delivery during PPM
@@ -362,7 +328,7 @@ class SpecialDiesRepairController extends Controller
             'die_id' => $die->id,
             'repair_type' => SpecialDiesRepair::TYPE_SEVERE_DAMAGE,
             'priority' => SpecialDiesRepair::PRIORITY_CRITICAL,
-            'status' => SpecialDiesRepair::STATUS_PENDING,
+            'status' => SpecialDiesRepair::STATUS_APPROVED,
             'reason' => $validated['reason'],
             'description' => $validated['description'],
             'requested_by' => auth()->user()->name,
@@ -370,6 +336,8 @@ class SpecialDiesRepairController extends Controller
             'is_ppm_interrupted' => in_array($die->ppm_alert_status, ['ppm_scheduled', 'ppm_in_progress']),
             'previous_ppm_status' => $die->ppm_alert_status,
             'previous_location' => $die->location,
+            'approved_by' => auth()->user()->name,
+            'approved_at' => now(),
             'estimated_hours' => $validated['estimated_hours'],
             'created_by' => auth()->id(),
         ]);
@@ -382,13 +350,13 @@ class SpecialDiesRepairController extends Controller
         }
 
         return redirect()->route('special-repair.show', $repair)
-            ->with('success', 'Severe damage report created. Awaiting approval for extended repair.');
+            ->with('success', 'Severe damage report created.');
     }
 
     public function destroy(SpecialDiesRepair $specialRepair)
     {
-        if (!in_array($specialRepair->status, [SpecialDiesRepair::STATUS_PENDING, SpecialDiesRepair::STATUS_CANCELLED])) {
-            return redirect()->back()->with('error', 'Only pending or cancelled repairs can be deleted.');
+        if (!in_array($specialRepair->status, [SpecialDiesRepair::STATUS_APPROVED, SpecialDiesRepair::STATUS_CANCELLED])) {
+            return redirect()->back()->with('error', 'Only open or cancelled repairs can be deleted.');
         }
 
         $specialRepair->delete();
