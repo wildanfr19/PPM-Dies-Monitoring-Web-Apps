@@ -311,6 +311,8 @@ class DieController extends Controller
             'line' => 'nullable|string|max:20',
             'process_type' => 'nullable|in:blank_pierce,draw,embos,trim,form,flang,restrike,pierce,cam_pierce',
             'control_stroke' => 'nullable|integer|min:0',
+            'last_ppm_date' => 'nullable|date',
+            'last_stroke' => 'nullable|integer|min:0',
             'location' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
             'is_4lot_check' => 'boolean',

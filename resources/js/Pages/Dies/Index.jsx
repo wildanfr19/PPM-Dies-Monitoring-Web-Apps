@@ -3,7 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import StatusBadge from '@/Components/PPM/StatusBadge';
 import LotProgress from '@/Components/PPM/LotProgress';
-import { confirmAction } from '@/Utils/swal';
+import { confirmAction, confirmDelete } from '@/Utils/swal';
 import { PROCESS_TYPES, getChecklistItems, getProcessTypeLabel, initializeChecklistResults } from '@/Utils/PpmChecklistData';
 
 export default function DiesIndex({ auth, dies, filters, customers, machineModels, lines, lineStats }) {
@@ -986,11 +986,10 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                     )}
                                                     {canEditDies && (
                                                         <button
-                                                            onClick={() => confirmAction(
-                                                                'Delete Die',
-                                                                `Are you sure you want to delete "${die.part_number}"?`,
-                                                                () => router.delete(route('dies.destroy', { die: die.encrypted_id }))
-                                                            )}
+                                                            onClick={async () => {
+                                                                const ok = await confirmDelete(die.part_number);
+                                                                if (ok) router.delete(route('dies.destroy', { die: die.encrypted_id }));
+                                                            }}
                                                             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                                                         >
                                                             <i className="fas fa-trash-alt"></i>
@@ -1190,11 +1189,10 @@ export default function DiesIndex({ auth, dies, filters, customers, machineModel
                                                 )}
                                                 {canEditDies && (
                                                     <button
-                                                        onClick={() => confirmAction(
-                                                            'Delete Die',
-                                                            `Are you sure you want to delete "${die.part_number}"?`,
-                                                            () => router.delete(route('dies.destroy', { die: die.encrypted_id }))
-                                                        )}
+                                                        onClick={async () => {
+                                                            const ok = await confirmDelete(die.part_number);
+                                                            if (ok) router.delete(route('dies.destroy', { die: die.encrypted_id }));
+                                                        }}
                                                         className="p-1.5 text-red-600 hover:bg-red-50 rounded transition dark:hover:bg-red-900/30"
                                                         title="Delete"
                                                     >
